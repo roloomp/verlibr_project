@@ -1,0 +1,24 @@
+.main-content {
+    display: flexbox;
+    padding: 5% 10px;
+}
+.poem-title {
+    padding: 5px 5px;
+    margin: 5px 0px;
+    border: 1px solid #000;
+}
+.poem-author {
+    padding: 5px 5px;
+    margin: 5px 0px;
+    border: 1px solid #000;
+}
+.poem-text {
+    padding: 5px 5px;
+    margin: 5px 0px;
+    border: 1px solid #000;
+}
+.poem-rating {
+    padding: 5px 5px;
+    margin: 5px 0px;
+    border: 1px solid #000;
+}
