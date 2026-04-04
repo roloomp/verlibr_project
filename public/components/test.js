@@ -8,11 +8,9 @@ function closeModal() {
 }
 
 function switchTab(tab) {
-  // убираем .active у всех вкладок и панелей
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
 
-  // добавляем .active только нужным
   document.getElementById('tab-' + tab).classList.add('active');
   document.getElementById('panel-' + tab).classList.add('active');
 }

@@ -97,7 +97,6 @@
 .ms-item{
     display: flex;
     justify-content: space-between;
-    color: #000;
 }
 
 .item_title{
@@ -124,4 +123,30 @@
 
 .column:not(:last-child){
   border-right:1px solid #000;
+}
+
+.author-icon {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.author-icon img {
+    display: flex;
+    width: 45px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.author-item-left{
+    display: flex;
+}
+.author-item-left-right {
+    display: block;
+    margin-left: 20px;
+}
+.author-item{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }

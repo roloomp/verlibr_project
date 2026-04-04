@@ -7,15 +7,9 @@
   align-items: center;
 }
 .overlay.open { display: flex; }
-
-/* По умолчанию все панели скрыты */
 .form-panel { display: none; }
-/* Показываем только активную */
 .form-panel.active {display: block;}
-
-/* Неактивная вкладка */
 .tab { border-bottom: 2px solid transparent; }
-/* Активная вкладка */
 .tab.active { border-bottom: 2px solid black; font-weight: bold; }
 .modal {
     height: 30%;
