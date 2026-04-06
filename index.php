@@ -1,17 +1,3 @@
-<?php
-$host = '127.127.126.25';
-$user = 'root';
-$pass = '';
-$base = 'test_sql';
-$conn = mysqli_connect($host, $user, $pass, $base);
-
-if (isset($_POST['login'])) {
-    $login_email = $_POST['user_email'];
-    $sql = "SELECT `email`, `password` FROM `profile` WHERE `email` = '$login_email'";
-    echo $sql;
-}
-?>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -20,37 +6,90 @@ if (isset($_POST['login'])) {
     <title>example.local</title>
     <link rel="stylesheet" href="public/css/index.css">
     <link rel="stylesheet" href="public/css/header.css">
-    <link rel="stylesheet" href="public/css/test.css">
+    <link rel="stylesheet" href="public/css/main-screen.css">
     <script src="public/components/header.js"></script>
-    <script src="public/components/test.js"></script>
+    <script src="public/components/main_screen.js"></script>
 </head>
 <body>
     <my-header></my-header>
     <auth-buttons></auth-buttons>
-    
-    <div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
-        <div class="modal">
-            <button class="close-btn" onclick="closeModal()">✕</button>
-
-            <div class="modal-tabs">
-                <button class="tab" id="tab-login" onclick="switchTab('login')">Вход</button>
-                <button class="tab" id="tab-register" onclick="switchTab('register')">Регистрация</button>
+    <div class="main-text">
+        <p class="low-text">— ПОЭЗИЯ НА КАЖДЫЙ ДЕНЬ</p>
+        <p class="big-text">Находите стихи, которые <span class="orange-word">говорят</span> с вами</p>
+    </div>
+    <div class="input-search">
+        <form>
+            <div class="search-wrapper">
+            <input type="text" 
+                name="main-screen-search-input" 
+                placeholder="Строка, цитата, настроение или автор.."
+                class="search-input">
+            <a href="#" class="search-icon">
+                <img src="public/source/search.png" alt="search">
+            </a>
             </div>
-
-            <div class="form-panel" id="panel-login" method="POST">
-                <input type="email" name="user_email" placeholder="Email" required>
-                <input type="password" name="user_password" placeholder="Пароль" required>
-                <button name="login">Войти</button>
-                <button>Зарегестрироваться</button>
-            </div>
-
-            <div class="form-panel" id="panel-register" method="POST">
-                <input type="email" name="new_user_email" placeholder="Email">
-                <input type="text" name="new_user_name" placeholder="Имя">
-                <input type="password" name="new_user_password" placeholder="Пароль">
-                <input type="password" name="new_user_repeat_pass" placeholder="Повторите пароль">
-                <button name="register">Создать аккаунт</button>
-            </div>
+        </form>
+    </div>
+    <div class="tags">
+        <button class="tag">Александр Пушкин</button>
+        <button class="tag">Весна</button>
+        <button class="tag">И грянул бой, Полтавской бой!</button>
+    </div>
+    <hr class="line">
+    <div class="container">
+        <div class="column">
+            <h3>Находки дня</h3>
+            <main-screen-item></main-screen-item>
+            <hr>
+            <main-screen-item></main-screen-item>
+            <hr>
+            <main-screen-item></main-screen-item>
+            <hr>
+            <main-screen-item></main-screen-item>
+            <hr>
+            <main-screen-item></main-screen-item>
+            <hr>
+            <main-screen-item></main-screen-item>
+            <hr>
+            <main-screen-item></main-screen-item>
+            <hr>
+            <main-screen-item></main-screen-item>
+        </div>
+        <div class="column">
+            <h3>Выбор Редакции</h3>
+            <main-screen-item></main-screen-item>
+            <hr>
+            <main-screen-item></main-screen-item>
+            <hr>
+            <main-screen-item></main-screen-item>
+            <hr>
+            <main-screen-item></main-screen-item>
+            <hr>
+            <main-screen-item></main-screen-item>
+            <hr>
+            <main-screen-item></main-screen-item>
+            <hr>
+            <main-screen-item></main-screen-item>
+            <hr>
+            <main-screen-item></main-screen-item>
+        </div>
+        <div class="column">
+            <h3>Лучшие авторы</h3>
+            <main-screen-author-item></main-screen-author-item>
+            <hr>
+            <main-screen-author-item></main-screen-author-item>
+            <hr>
+            <main-screen-author-item></main-screen-author-item>
+            <hr>
+            <main-screen-author-item></main-screen-author-item>
+            <hr>
+            <main-screen-author-item></main-screen-author-item>
+            <hr>
+            <main-screen-author-item></main-screen-author-item>
+            <hr>
+            <main-screen-author-item></main-screen-author-item>
+            <hr>
+            <main-screen-author-item></main-screen-author-item>
         </div>
     </div>
 </body>

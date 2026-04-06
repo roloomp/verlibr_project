@@ -1,24 +1,27 @@
 function openModal(tab) {
-  document.getElementById('overlay').classList.add('open');
+  var overlay = document.getElementById('overlay');
+  if (!overlay) { console.error('overlay not found'); return; }
+  overlay.classList.add('open');
   switchTab(tab);
 }
 
 function closeModal() {
-  document.getElementById('overlay').classList.remove('open');
+  var overlay = document.getElementById('overlay');
+  if (overlay) overlay.classList.remove('open');
 }
 
 function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
-
-  document.getElementById('tab-' + tab).classList.add('active');
-  document.getElementById('panel-' + tab).classList.add('active');
+  var panels = document.querySelectorAll('.form-panel');
+  panels.forEach(function(p) { p.classList.remove('active'); });
+  var target = document.getElementById('panel-' + tab);
+  if (!target) { console.error('panel not found: panel-' + tab); return; }
+  target.classList.add('active');
 }
 
 function handleOverlayClick(e) {
   if (e.target === document.getElementById('overlay')) closeModal();
 }
 
-document.addEventListener('keydown', e => {
+document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeModal();
 });

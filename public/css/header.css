@@ -97,3 +97,143 @@
     color: #657565;
     border-color: 1px solid #657565;
 }
+
+
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+.overlay.open { display: flex; }
+.form-panel { display: none; }
+.form-panel.active {display: block;}
+.tab { border-bottom: 2px solid transparent; }
+.tab.active { border-bottom: 2px solid black; font-weight: bold; }
+.modal-tabs {
+  display: none;
+}
+.modal {
+    width: 40%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background-color: #ddd;
+    border: 2px solid #000;
+    border-radius: 8px;
+    padding: 24px;
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+}
+
+.modal-tabs-login-text1 {
+    font-size: 36px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.modal-tabs-login-text2 {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 16px;
+}
+
+.modal-tabs-text-preinput {
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 12px;
+    margin-bottom: 4px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-tabs-text-preinput2 {
+    font-size: 12px;
+    color: #777;
+    margin-bottom: 4px;
+}
+
+.modal-tabs-input {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid #aaa;
+    border-radius: 6px;
+    box-sizing: border-box;
+    background: #f9f9f9;
+    margin-bottom: 4px;
+}
+
+.modal-tabs-input:focus {
+    outline: none;
+    border-color: #656575;
+}
+
+.modal-tabs-login-button-log {
+    width: 100%;
+    margin-top: 16px;
+    padding: 10px;
+    background-color: #756464;
+    color: white;
+    border: 1px solid #756464;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.modal-tabs-login-button-log:hover {
+    background-color: #887676;
+}
+
+.modal-tabs-login-button-reg {
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px;
+    background-color: transparent;
+    color: #756464;
+    border: 1px solid #756464;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.modal-tabs-login-button-reg:hover {
+    background-color: #eee;
+}
+
+.modal-tabs-login-text-preinput-forgot-pass {
+    background: none;
+    border: none;
+    color: #656575;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.modal-tabs-u-have-acc {
+    margin-top: 12px;
+    font-size: 13px;
+    text-align: center;
+    color: #555;
+}
+
+.modal-blue-button-login {
+    background: none;
+    border: none;
+    color: #656575;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+}
