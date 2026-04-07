@@ -112,10 +112,7 @@
 .form-panel { display: none; }
 .form-panel.active {display: block;}
 .tab { border-bottom: 2px solid transparent; }
-.tab.active { border-bottom: 2px solid black; font-weight: bold; }
-.modal-tabs {
-  display: none;
-}
+.modal-tabs { display: none; }
 .modal {
     width: 40%;
     max-width: 500px;
@@ -130,8 +127,9 @@
 
 .close-btn {
     position: absolute;
-    top: 12px;
+    top: 16px;
     right: 16px;
+    border: 2px solid #756464;
 }
 
 .modal-tabs-login-text1 {

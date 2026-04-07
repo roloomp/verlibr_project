@@ -81,7 +81,6 @@ class RegistrationAndLoginButton extends HTMLElement {
         </div>
         `;
 
-        // Все ссылки на элементы — внутри компонента через this
         const overlay   = this.querySelector('#overlay');
         const modal     = this.querySelector('.modal');
         const panels    = this.querySelectorAll('.form-panel');
@@ -101,12 +100,9 @@ class RegistrationAndLoginButton extends HTMLElement {
         this.querySelector('#btn-go-register').addEventListener('click', () => openModal('register'));
         this.querySelector('#btn-go-login').addEventListener('click', () => openModal('login'));
 
-        // Клик на затемнение закрывает модалку
         overlay.addEventListener('click', (e) => {
             if (!modal.contains(e.target)) closeModal();
         });
-
-        // Escape закрывает
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeModal();
         });
