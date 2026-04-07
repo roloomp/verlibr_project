@@ -42,54 +42,60 @@ class RegistrationAndLoginButton extends HTMLElement {
             <div class="modal">
                 <button class="close-btn" id="btn-close">✕</button>
 
-                <div class="form-panel" id="panel-login">
+                <form class="form-panel" id="panel-login" action="" method="POST">
+                    <input type="hidden" name="action" value="login">
                     <div class="modal-tabs-login-text1">Вход</div>
                     <div class="modal-tabs-login-text2">Введите свои данные для входа в аккаунт</div>
                     <div class="modal-tabs-text-preinput">Email <span style="color: #F00;">*</span></div>
-                    <input class="modal-tabs-input" type="email" placeholder="Ваш email">
+                    <input class="modal-tabs-input" type="email" placeholder="Ваш email" name="login_email">
                     <div class="modal-tabs-text-preinput">
                         Пароль <span style="color: #F00;">*</span>
                         <button class="modal-tabs-login-text-preinput-forgot-pass">Забыли пароль?</button>
                     </div>
-                    <input class="modal-tabs-input" type="password" placeholder="Ваш пароль">
-                    <button class="modal-tabs-login-button-log">Войти</button>
-                    <button class="modal-tabs-login-button-reg" id="btn-go-register">Зарегестрироваться</button>
-                </div>
+                    <input class="modal-tabs-input" type="password" placeholder="Ваш пароль" name="login_password">
+                    <?php if (!empty($error)): ?>
+                    <div class="error-message" name="error"><?php echo $error; ?></div>
+                    <?php endif; ?>
+                    <button class="modal-tabs-login-button-log" type="submit">Войти</button>
+                    <button class="modal-tabs-login-button-reg" id="btn-go-register" type="button">Зарегестрироваться</button>
+                </form>
 
-                <div class="form-panel" id="panel-register">
+                <form class="form-panel" id="panel-register" action="" method="POST">
+                    <input type="hidden" name="action" value="register">
                     <div class="modal-tabs-login-text1">Создать аккаунт</div>
                     <div>
                         <div class="modal-tabs-text-preinput">Email <span style="color: #F00;">*</span></div>
                         <div class="modal-tabs-text-preinput2">Будет также логином для авторизации</div>
                     </div>
-                    <input class="modal-tabs-input" type="email" placeholder="mail@example.com">
+                    <input class="modal-tabs-input" type="email" placeholder="mail@example.com" name="register_email">
                     <div>
                         <div class="modal-tabs-text-preinput">Отображаемое имя <span style="color: #F00;">*</span></div>
                         <div class="modal-tabs-text-preinput2">Ваш никнейм</div>
                     </div>
-                    <input class="modal-tabs-input" type="text">
+                    <input class="modal-tabs-input" type="text" name="register_nickname">
                     <div class="modal-tabs-text-preinput">Пароль <span style="color: #F00;">*</span></div>
-                    <input class="modal-tabs-input" type="password">
+                    <input class="modal-tabs-input" type="password" name="register_password">
                     <div class="modal-tabs-text-preinput">Подтвердите пароль <span style="color: #F00;">*</span></div>
-                    <input class="modal-tabs-input" type="password">
-                    <button class="modal-tabs-login-button-log">Создать аккаунт</button>
+                    <input class="modal-tabs-input" type="password" name="register_verify_password">
+                    <button class="modal-tabs-login-button-log" type="submit">Создать аккаунт</button>
                     <div class="modal-tabs-u-have-acc">
-                        Уже есть аккаунт? <button class="modal-blue-button-login" id="btn-go-login">Войти</button>
+                        Уже есть аккаунт? <button class="modal-blue-button-login" id="btn-go-login" type="button">Войти</button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
         `;
 
-        const overlay   = this.querySelector('#overlay');
-        const modal     = this.querySelector('.modal');
-        const panels    = this.querySelectorAll('.form-panel');
+        const overlay = this.querySelector('#overlay');
+        const modal = this.querySelector('.modal');
+        const panels = this.querySelectorAll('.form-panel');
 
         const openModal = (tab) => {
-            if (document.activeElement) document.activeElement.blur();
-            panels.forEach(p => p.classList.remove('active'));
-            this.querySelector('#panel-' + tab).classList.add('active');
-            overlay.classList.add('open');
+            if (document.activeElement)
+                document.activeElement.blur();
+                panels.forEach(p => p.classList.remove('active'));
+                this.querySelector('#panel-' + tab).classList.add('active');
+                overlay.classList.add('open');
         };
 
         const closeModal = () => overlay.classList.remove('open');

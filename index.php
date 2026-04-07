@@ -1,3 +1,81 @@
+<?php
+session_start();
+$host = '127.127.126.25';
+$user = 'root';
+$pass = '';
+$base = 'test_sql';
+$conn = mysqli_connect($host, $user, $pass, $base);
+
+$action = $_POST['action'] ?? '';
+switch ($action) {
+    case 'login':
+        $email = $_POST['login_email'] ?? '';
+        $password = $_POST['login_password'] ?? '';
+        if ($password == '' || $email == '') {
+            echo "<script>console.log('Ошибка');</script>";
+            break;
+        }
+        if (mb_strlen($password, 'UTF-8') < 7) {
+            echo "<script>console.log('Короткий пароль');</script>";
+            break;
+        }
+
+        $sql = "SELECT id, name, description, email, password FROM profile WHERE email = '$email'";
+        $result = mysqli_query($conn, $sql);
+        if (mysqli_num_rows($result) === 1) {
+            $user = mysqli_fetch_assoc($result);
+            if ($password === $user['password']) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['user_email'] = $user['email'];
+                $_SESSION['logged_in'] = true;
+                echo "<script>console.log('УСПЕХ');</script>";
+                echo "<script>console.log('Email: " . $_SESSION['user_email'] . "');</script>";
+                echo "<script>console.log('Password: " . $password . "');</script>";
+            }
+            else {
+                echo "<script>console.log('Неверный пароль');</script>";
+                break;
+            }
+        }
+        else {
+            echo "<script>console.log('Пользователь не найден');</script>";
+            break;
+        }
+        break;
+    case 'register':
+        $email = $_POST['register_email'] ?? '';
+        $name = $_POST['register_nickname'] ?? '';
+        $password = $_POST['register_password'] ?? '';
+        $verify_password = $_POST['register_verify_password'] ?? '';
+
+        if ($email === '' || $name === '' || $password === '') {
+            echo "<script>console.log('Ошибка');</script>";
+            break;
+        }
+        if ($password !== $verify_password) {
+            echo "<script>console.log('Пароли не совпадают');</script>";
+            break;
+        }
+        $check = mysqli_query($conn, "SELECT id FROM profile WHERE email = '$email'");
+        if (mysqli_num_rows($check) > 0) {
+            echo "<script>console.log('Этот email уже зарегистрирован');</script>";
+            break;
+        }
+
+        $insert = mysqli_query($conn,
+            "INSERT INTO profile (name, email, password) VALUES ('$name', '$email', '$password')"
+        );
+
+        echo "<script>console.log('Email: " . $email . "');</script>";
+        echo "<script>console.log('Name: " . $name . "');</script>";
+        echo "<script>console.log('Password: " . $password . "');</script>";
+        echo "<script>console.log('Verify Password: " . $verify_password . "');</script>";
+        break;
+    default:
+        break;
+}
+?>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,7 +93,7 @@
     <auth-buttons></auth-buttons>
     <div class="main-text">
         <p class="low-text">— ПОЭЗИЯ НА КАЖДЫЙ ДЕНЬ</p>
-        <p class="big-text">Находите стихи, которые <span class="orange-word">говорят</span> с вами</p>
+        <p class="big-text">Находите стихи, которые <span style="color: #CC7D00;">говорят</span> с вами</p>
     </div>
     <div class="input-search">
         <form>

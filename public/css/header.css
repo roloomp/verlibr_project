@@ -235,3 +235,9 @@
     text-decoration: underline;
     padding: 0;
 }
+
+.error-message {
+    color: red;
+    font-size: 11px;
+    margin-top: 5px;
+}
