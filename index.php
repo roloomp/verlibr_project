@@ -26,10 +26,9 @@ switch ($action) {
             $user = mysqli_fetch_assoc($result);
             if ($password === $user['password']) {
                 $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_email'] = $user['email'];
                 $_SESSION['logged_in'] = true;
                 echo "<script>console.log('УСПЕХ');</script>";
-                echo "<script>console.log('Email: " . $_SESSION['user_email'] . "');</script>";
+                echo "<script>console.log('Email: " . $email . "');</script>";
                 echo "<script>console.log('Password: " . $password . "');</script>";
             }
             else {
@@ -65,6 +64,8 @@ switch ($action) {
         $insert = mysqli_query($conn,
             "INSERT INTO profile (name, email, password) VALUES ('$name', '$email', '$password')"
         );
+        $_SESSION['user_id'] = mysqli_insert_id($conn);
+        $_SESSION['logged_in'] = true;
 
         echo "<script>console.log('Email: " . $email . "');</script>";
         echo "<script>console.log('Name: " . $name . "');</script>";
@@ -85,12 +86,13 @@ switch ($action) {
     <link rel="stylesheet" href="public/css/index.css">
     <link rel="stylesheet" href="public/css/header.css">
     <link rel="stylesheet" href="public/css/main-screen.css">
-    <script src="public/components/header.js"></script>
-    <script src="public/components/main_screen.js"></script>
+    <script src="/public/components/main_screen.js"></script>
 </head>
 <body>
     <my-header></my-header>
+    <?php if (empty($_SESSION['logged_in'])): ?>
     <auth-buttons></auth-buttons>
+    <?php endif; ?>
     <div class="main-text">
         <p class="low-text">— ПОЭЗИЯ НА КАЖДЫЙ ДЕНЬ</p>
         <p class="big-text">Находите стихи, которые <span style="color: #CC7D00;">говорят</span> с вами</p>
@@ -117,39 +119,11 @@ switch ($action) {
     <div class="container">
         <div class="column">
             <h3>Находки дня</h3>
-            <main-screen-item></main-screen-item>
-            <hr>
-            <main-screen-item></main-screen-item>
-            <hr>
-            <main-screen-item></main-screen-item>
-            <hr>
-            <main-screen-item></main-screen-item>
-            <hr>
-            <main-screen-item></main-screen-item>
-            <hr>
-            <main-screen-item></main-screen-item>
-            <hr>
-            <main-screen-item></main-screen-item>
-            <hr>
-            <main-screen-item></main-screen-item>
+            <div id="poems-day"></div>
         </div>
         <div class="column">
             <h3>Выбор Редакции</h3>
-            <main-screen-item></main-screen-item>
-            <hr>
-            <main-screen-item></main-screen-item>
-            <hr>
-            <main-screen-item></main-screen-item>
-            <hr>
-            <main-screen-item></main-screen-item>
-            <hr>
-            <main-screen-item></main-screen-item>
-            <hr>
-            <main-screen-item></main-screen-item>
-            <hr>
-            <main-screen-item></main-screen-item>
-            <hr>
-            <main-screen-item></main-screen-item>
+            <div id="poems-editor"></div>
         </div>
         <div class="column">
             <h3>Лучшие авторы</h3>
