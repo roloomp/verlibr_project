@@ -1,0 +1,120 @@
+/* ─── FAVORITES PAGE ─────────────────────────────────────── */
+.fav-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 20px 40px;
+}
+
+.fav-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.fav-title {
+    font-size: 26px;
+    font-weight: normal;
+}
+
+.fav-sort {
+    border: 1px solid #ccc;
+    border-radius: var(--radius-sm);
+    padding: 5px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    background: #fff;
+}
+
+.fav-empty {
+    color: var(--color-text-muted);
+    font-size: 15px;
+    padding: 40px 0;
+    text-align: center;
+}
+
+/* ─── 3-КОЛОНОЧНАЯ СЕТКА ─────────────────────────────────── */
+.fav-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid #bbb;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Каждая строка — 3 ячейки, между строками разделитель */
+.fav-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid #ddd;
+    gap: 8px;
+    min-width: 0;
+}
+
+/* Правая и левая граница между колонками */
+.fav-item:nth-child(3n+1) {
+    border-right: 1px solid #ddd;
+}
+.fav-item:nth-child(3n+2) {
+    border-right: 1px solid #ddd;
+}
+
+/* Убираем нижнюю границу у последних трёх */
+.fav-item:nth-last-child(-n+3) {
+    border-bottom: none;
+}
+/* Но если последний ряд не полный — убираем только у реально последних */
+.fav-item:last-child,
+.fav-item:nth-last-child(2):nth-child(3n+1),
+.fav-item:nth-last-child(2):nth-child(3n+2) {
+    border-bottom: none;
+}
+
+.fav-item__info {
+    min-width: 0;
+    flex: 1;
+}
+
+.fav-item__title {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.fav-item__title a:hover { text-decoration: underline; }
+
+.fav-item__author {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fav-item__year {
+    font-size: 11px;
+    color: var(--color-text-light);
+}
+
+.fav-item__scores {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.fav-score {
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+    min-width: 20px;
+    text-align: right;
+}
+.fav-score--alt {
+    color: var(--color-text-muted);
+    font-weight: normal;
+}

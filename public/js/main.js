@@ -11,14 +11,15 @@ function renderEmpty(container, text) {
 
 class PoemItem extends HTMLElement {
     connectedCallback() {
-        const title  = this.getAttribute('title')  ?? '';
-        const author = this.getAttribute('author') ?? '';
-        const year   = this.getAttribute('year')   ?? '';
+        const id     = this.getAttribute('poem-id') ?? '#';
+        const title  = this.getAttribute('title')   ?? '';
+        const author = this.getAttribute('author')  ?? '';
+        const year   = this.getAttribute('year')    ?? '';
         this.innerHTML = `
         <div class="ms-item">
             <div>
-                <div class="item-title"><a href="#">${title}</a></div>
-                <div class="item-author"><a href="#">${author}</a></div>
+                <div class="item-title"><a href="poem.php?id=${id}">${title}</a></div>
+                <div class="item-author">${author}</div>
             </div>
             <div class="item-year">${year}</div>
         </div>
@@ -30,12 +31,24 @@ customElements.define('poem-item', PoemItem);
 
 class AuthorItem extends HTMLElement {
     connectedCallback() {
-        const name  = this.getAttribute('name')  ?? 'Автор';
-        const count = this.getAttribute('count') ?? '';
+        const name   = this.getAttribute('name')   ?? 'Автор';
+        const dates  = this.getAttribute('dates')  ?? '';
+        const avatar = this.getAttribute('avatar') ?? '';
+        const id     = this.getAttribute('author-id') ?? '#';
+
+        const avatarHtml = avatar
+            ? `<img class="author-avatar" src="${avatar}" alt="${name}">`
+            : `<div class="author-avatar author-avatar--placeholder"></div>`;
+
         this.innerHTML = `
         <div class="ms-author-item">
-            <div class="author-name"><a href="#">${name}</a></div>
-            ${count ? `<div class="author-count">${count} стихов</div>` : ''}
+            <div class="author-left">
+                ${avatarHtml}
+                <div>
+                    <div class="author-name"><a href="author.php?id=${id}">${name}</a></div>
+                    ${dates ? `<div class="author-dates">${dates}</div>` : ''}
+                </div>
+            </div>
         </div>
         `;
     }
@@ -58,9 +71,10 @@ async function loadPoems(containerId, type) {
 
         poems.forEach((poem, index) => {
             const item = document.createElement('poem-item');
-            item.setAttribute('title',  poem.title  ?? '');
-            item.setAttribute('author', poem.author ?? '');
-            item.setAttribute('year',   poem.year   ?? '');
+            item.setAttribute('poem-id', poem.id   ?? '');
+            item.setAttribute('title',   poem.title  ?? '');
+            item.setAttribute('author',  poem.author ?? '');
+            item.setAttribute('year',    poem.year   ?? '');
             container.appendChild(item);
             if (index < poems.length - 1) {
                 container.appendChild(document.createElement('hr'));
@@ -81,8 +95,10 @@ async function loadAuthors() {
 
         authors.forEach((author, index) => {
             const item = document.createElement('author-item');
-            item.setAttribute('name',  author.name);
-            item.setAttribute('count', author.poem_count);
+            item.setAttribute('author-id', author.id);
+            item.setAttribute('name',   author.name);
+            item.setAttribute('dates',  author.dates ?? '');
+            item.setAttribute('avatar', author.avatar ?? '');
             container.appendChild(item);
             if (index < authors.length - 1) {
                 container.appendChild(document.createElement('hr'));

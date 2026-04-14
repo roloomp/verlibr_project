@@ -1,6 +1,5 @@
 <?php
 
-
 require_once __DIR__ . '/../config/db.php';
 
 function validate_login_input(string $email, string $password): ?string {
@@ -41,7 +40,6 @@ function handle_login(mysqli $conn, string $email, string $password): array {
     $_SESSION['logged_in'] = true;
     return ['ok' => true, 'error' => ''];
 }
-
 
 function handle_register(mysqli $conn, string $email, string $name, string $password, string $password2): array {
     if ($email === '' || $name === '' || $password === '') {

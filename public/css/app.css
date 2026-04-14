@@ -10,8 +10,8 @@
     --color-text-muted:  #555;
     --color-text-light:  #999;
 
-    --radius-sm:  6px;
-    --radius-md:  8px;
+    --radius-sm:   6px;
+    --radius-md:   8px;
     --radius-pill: 999px;
 
     --transition: 0.2s ease;
@@ -40,6 +40,7 @@ button {
 }
 
 
+/* ─── HEADER ────────────────────────────────────────────── */
 .header {
     display: flex;
     align-items: center;
@@ -51,7 +52,7 @@ button {
 .header__left {
     display: flex;
     align-items: center;
-    gap: 7%;
+    gap: 12px;
 }
 
 .header__logo {
@@ -85,44 +86,42 @@ button {
 }
 
 
-.auth-bar {
+/* ─── AUTH TOPBAR (кнопки по разным сторонам) ────────────── */
+.auth-topbar {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
-    gap: 8px;
+    padding: 6px 16px;
 }
 
 .auth-btn {
-    padding: 4px 10px;
+    padding: 4px 14px;
     border-radius: var(--radius-sm);
     font-size: 14px;
     transition: background-color var(--transition), color var(--transition);
 }
 
 .auth-btn--login {
-    background-color: var(--color-nav);
-    color: white;
-    border: 1px solid white;
+    background-color: transparent;
+    color: var(--color-brand);
+    border: 1px solid var(--color-brand);
 }
 .auth-btn--login:hover {
-    background-color: white;
-    color: var(--color-nav);
-    border-color: var(--color-nav);
+    background-color: var(--color-brand);
+    color: white;
 }
 
 .auth-btn--register {
-    background-color: var(--color-nav-alt);
+    background-color: var(--color-brand);
     color: white;
-    border: 1px solid var(--color-nav-alt);
+    border: 1px solid var(--color-brand);
 }
 .auth-btn--register:hover {
-    background-color: white;
-    color: var(--color-nav-alt);
-    border-color: var(--color-nav-alt);
+    background-color: var(--color-brand-light);
 }
 
 
+/* ─── MODAL / OVERLAY ────────────────────────────────────── */
 .overlay {
     display: none;
     position: fixed;
@@ -137,46 +136,53 @@ button {
 }
 
 .modal {
-    width: 40%;
-    max-width: 500px;
+    width: 420px;
     max-height: 90vh;
     overflow-y: auto;
-    background-color: #ddd;
-    border: 2px solid var(--color-border);
+    background-color: #fff;
+    border: 2px solid var(--color-brand);
     border-radius: var(--radius-md);
-    padding: 24px;
+    padding: 32px 40px;
     position: relative;
 }
 
 .modal__close {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: 14px;
+    right: 14px;
     border: 2px solid var(--color-brand);
     background: none;
-    padding: 2px 6px;
+    padding: 2px 8px;
     border-radius: var(--radius-sm);
+    font-size: 14px;
+    color: var(--color-brand);
+}
+.modal__close:hover {
+    background: var(--color-brand);
+    color: white;
 }
 
 .form-panel { display: none; }
 .form-panel.active { display: block; }
 
 .form__title {
-    font-size: 36px;
+    font-size: 40px;
     font-weight: bold;
     margin-bottom: 6px;
+    text-align: center;
 }
 
 .form__subtitle {
-    font-size: 16px;
+    font-size: 15px;
     color: var(--color-text-muted);
-    margin-bottom: 16px;
+    margin-bottom: 20px;
+    text-align: center;
 }
 
 .form__label {
     font-size: 14px;
     font-weight: 600;
-    margin-top: 12px;
+    margin-top: 14px;
     margin-bottom: 4px;
     display: flex;
     justify-content: space-between;
@@ -187,32 +193,52 @@ button {
     font-size: 12px;
     color: #777;
     margin-bottom: 4px;
+    display: inline;
+    margin-left: 6px;
+    font-weight: normal;
+}
+
+/* hint рядом с label — как в макете */
+.form__label-with-hint {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-top: 14px;
+    margin-bottom: 4px;
+}
+.form__label-with-hint .form__label {
+    margin: 0;
+}
+.form__label-with-hint .form__hint {
+    margin: 0;
 }
 
 .form__input {
     width: 100%;
-    padding: 8px 12px;
+    padding: 10px 14px;
     font-size: 14px;
-    border: 1px solid #aaa;
+    border: 1px solid #bbb;
     border-radius: var(--radius-sm);
-    background: #f9f9f9;
+    background: #e8e8e8;
     margin-bottom: 4px;
+    color: #333;
 }
+.form__input::placeholder { color: #999; }
 .form__input:focus {
     outline: none;
-    border-color: var(--color-nav);
+    border-color: var(--color-brand);
 }
 
 .form__btn {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     border-radius: var(--radius-sm);
     font-size: 15px;
     transition: background-color var(--transition);
 }
 
 .form__btn--primary {
-    margin-top: 16px;
+    margin-top: 20px;
     background-color: var(--color-brand);
     color: white;
     border: 1px solid var(--color-brand);
@@ -222,26 +248,28 @@ button {
 }
 
 .form__btn--secondary {
-    margin-top: 8px;
-    background-color: transparent;
-    color: var(--color-brand);
-    border: 1px solid var(--color-brand);
+    margin-top: 10px;
+    background-color: #e0e0e0;
+    color: #333;
+    border: 1px solid #ccc;
 }
 .form__btn--secondary:hover {
-    background-color: #eee;
+    background-color: #d0d0d0;
 }
 
 .form__link-btn {
     background: none;
     border: none;
-    color: var(--color-nav);
+    color: var(--color-text-muted);
     font-size: 12px;
-    text-decoration: underline;
+    font-weight: normal;
+    text-decoration: none;
     padding: 0;
 }
+.form__link-btn:hover { text-decoration: underline; }
 
 .form__footer {
-    margin-top: 12px;
+    margin-top: 14px;
     font-size: 13px;
     text-align: center;
     color: var(--color-text-muted);
@@ -250,23 +278,22 @@ button {
 .form__footer-btn {
     background: none;
     border: none;
-    color: var(--color-nav);
+    color: var(--color-brand);
     font-size: 13px;
     text-decoration: underline;
     padding: 0;
 }
 
-.required {
-    color: red;
-}
+.required { color: red; }
 
 .error-message {
     color: red;
-    font-size: 11px;
-    margin-top: 5px;
+    font-size: 12px;
+    margin-top: 6px;
 }
 
 
+/* ─── HERO ───────────────────────────────────────────────── */
 .hero {
     padding: 15px 5%;
 }
@@ -276,11 +303,12 @@ button {
 }
 .hero__title {
     font-size: 32px;
+    margin-top: 4px;
 }
-.accent {
-    color: var(--color-accent);
-}
+.accent { color: var(--color-accent); }
 
+
+/* ─── SEARCH ─────────────────────────────────────────────── */
 .search-section {
     padding: 0 5%;
 }
@@ -294,9 +322,9 @@ button {
 .search-input {
     width: 100%;
     font-size: 15px;
-    border: 1px solid var(--color-border);
-    background-color: var(--color-bg-input);
-    padding: 10px;
+    border: 1px solid #bbb;
+    background-color: #e8e8e8;
+    padding: 10px 40px 10px 14px;
     border-radius: var(--radius-sm);
     outline: none;
 }
@@ -311,6 +339,8 @@ button {
     height: 20px;
 }
 
+
+/* ─── TAGS ───────────────────────────────────────────────── */
 .tags {
     padding: 5px 5%;
     display: flex;
@@ -318,29 +348,31 @@ button {
     gap: 8px;
 }
 .tag {
-    padding: 6px 14px;
+    padding: 5px 14px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-pill);
-    background: #eee;
+    background: transparent;
     font-size: 12px;
     transition: background-color var(--transition);
 }
-.tag:hover {
-    background: #ddd;
-}
+.tag:hover { background: #eee; }
 
+
+/* ─── DIVIDER ────────────────────────────────────────────── */
 .divider {
     border: none;
     height: 1px;
-    background: var(--color-border);
+    background: #aaa;
     margin: 3% 0;
 }
 
+
+/* ─── COLUMNS (главная) ──────────────────────────────────── */
 .columns {
     margin: 0 5% 3%;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    border: 1px solid var(--color-border);
+    border: 1px solid #bbb;
     border-radius: 10px;
     overflow: hidden;
 }
@@ -348,48 +380,85 @@ button {
     padding: 20px;
 }
 .column:not(:last-child) {
-    border-right: 1px solid var(--color-border);
+    border-right: 1px solid #bbb;
 }
 .column h2 {
     text-align: center;
     color: var(--color-accent);
     font-size: 1.1rem;
     margin-bottom: 16px;
+    font-weight: normal;
 }
 
 .ms-item {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
 }
 .item-title {
-    font-size: 16px;
+    font-size: 15px;
+    font-weight: 500;
 }
+.item-title a:hover { text-decoration: underline; }
 .item-author {
     font-size: 12px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
 }
 .item-year {
-    align-content: center;
     font-size: 12px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    align-self: center;
+    flex-shrink: 0;
 }
 
 .column hr {
     border: none;
     height: 1px;
-    background: var(--color-border);
-    margin: 5px 0;
+    background: #ccc;
+    margin: 6px 0;
 }
 
+
+/* ─── AUTHORS LIST ───────────────────────────────────────── */
 .ms-author-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     padding: 4px 0;
 }
-.author-count {
-    font-size: 12px;
+
+.author-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.author-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #ccc;
+}
+
+.author-avatar--placeholder {
+    background: #bbb;
+    display: inline-block;
+}
+
+.author-name {
+    font-size: 14px;
+    font-weight: 500;
+}
+.author-name a:hover { text-decoration: underline; }
+
+.author-dates {
+    font-size: 11px;
     color: var(--color-text-light);
-    white-space: nowrap;
-    margin-left: 8px;
+    margin-top: 1px;
 }
 
 .empty-msg {
@@ -398,15 +467,43 @@ button {
     padding: 8px 0;
 }
 
-.columns a {
-    color: inherit;
-}
+.columns a { color: inherit; }
 
 
+/* ─── UTILS ──────────────────────────────────────────────── */
 .visually-hidden {
     position: absolute;
     width: 1px; height: 1px;
     overflow: hidden;
     clip: rect(0 0 0 0);
     white-space: nowrap;
+}
+
+
+/* ─── PAGINATION ─────────────────────────────────────────── */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    margin: 20px 0;
+}
+.pagination a, .pagination span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    border: 1px solid #ccc;
+    color: #333;
+    text-decoration: none;
+    transition: background var(--transition);
+}
+.pagination a:hover { background: #eee; }
+.pagination .active {
+    background: var(--color-accent);
+    color: white;
+    border-color: var(--color-accent);
 }

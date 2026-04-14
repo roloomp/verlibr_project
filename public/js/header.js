@@ -5,20 +5,20 @@ class MyHeader extends HTMLElement {
         <header class="header">
             <a href="/" class="header__left">
                 <img class="header__logo" src="public/assets/icons/Icon_main.png" alt="Верлибр">
-                <span class="header__title">Верлибр</span>
+                <span class="header__title">Verlibr</span>
             </a>
             <nav class="header__nav" aria-label="Навигация">
-                <a href="#" class="header__icon" aria-label="Поиск">
-                    <img src="public/assets/icons/Icon_search.png" alt="">
-                </a>
                 <a href="#" class="header__icon" aria-label="Популярное">
                     <img src="public/assets/icons/Icon_fire.png" alt="">
                 </a>
-                <a href="#" class="header__icon" aria-label="Избранное">
-                    <img src="public/assets/icons/Icon_favorite.png" alt="">
+                <a href="#" class="header__icon" aria-label="Поиск">
+                    <img src="public/assets/icons/Icon_search.png" alt="">
                 </a>
                 <a href="#" class="header__icon" aria-label="Профиль">
                     <img src="public/assets/icons/Icon_profile.png" alt="">
+                </a>
+                <a href="#" class="header__icon" aria-label="Избранное">
+                    <img src="public/assets/icons/Icon_favorite.png" alt="">
                 </a>
             </nav>
         </header>
@@ -34,7 +34,7 @@ class AuthButtons extends HTMLElement {
 
         this.innerHTML = `
         <div class="auth-bar">
-            <button class="auth-btn auth-btn--login"    id="btn-login">Вход</button>
+            <button class="auth-btn auth-btn--login" id="btn-login">Вход</button>
             <button class="auth-btn auth-btn--register" id="btn-register">Регистрация</button>
         </div>
 
@@ -48,9 +48,7 @@ class AuthButtons extends HTMLElement {
                     <div class="form__title">Вход</div>
                     <div class="form__subtitle">Введите свои данные для входа в аккаунт</div>
 
-                    <label class="form__label">
-                        Email <span class="required">*</span>
-                    </label>
+                    <label class="form__label">Email <span class="required">*</span></label>
                     <input class="form__input" type="email" placeholder="Ваш email" name="login_email" required>
 
                     <div class="form__label">
@@ -108,9 +106,7 @@ class AuthButtons extends HTMLElement {
         const panels  = this.querySelectorAll('.form-panel');
 
         const openModal = (tab) => {
-            if (document.activeElement) {
-                document.activeElement.blur();
-            }
+            if (document.activeElement) document.activeElement.blur();
             panels.forEach(p => p.classList.remove('active'));
             this.querySelector(`#panel-${tab}`).classList.add('active');
             overlay.classList.add('open');
