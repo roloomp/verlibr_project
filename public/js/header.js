@@ -1,24 +1,32 @@
-
 class MyHeader extends HTMLElement {
     connectedCallback() {
+        // Определяем текущую страницу для подсветки активной иконки
+        const path = window.location.pathname;
+        const page = path.split('/').pop() || 'index.php';
+
+        const isActive = (names) =>
+            names.some(n => page === n || path.endsWith('/' + n))
+                ? 'header__icon--active'
+                : '';
+
         this.innerHTML = `
         <header class="header">
-            <a href="/" class="header__left">
+            <a href="index.php" class="header__left">
                 <img class="header__logo" src="public/assets/icons/Icon_main.png" alt="Верлибр">
                 <span class="header__title">Verlibr</span>
             </a>
             <nav class="header__nav" aria-label="Навигация">
-                <a href="#" class="header__icon" aria-label="Популярное">
-                    <img src="public/assets/icons/Icon_fire.png" alt="">
+                <a href="popular.php" class="header__icon ${isActive(['popular.php'])}" aria-label="Популярное" title="Популярное">
+                    <img src="public/assets/icons/Icon_fire.png" alt="Популярное">
                 </a>
-                <a href="#" class="header__icon" aria-label="Поиск">
-                    <img src="public/assets/icons/Icon_search.png" alt="">
+                <a href="search.php" class="header__icon ${isActive(['search.php'])}" aria-label="Поиск" title="Поиск">
+                    <img src="public/assets/icons/Icon_search.png" alt="Поиск">
                 </a>
-                <a href="#" class="header__icon" aria-label="Профиль">
-                    <img src="public/assets/icons/Icon_profile.png" alt="">
+                <a href="profile.php" class="header__icon ${isActive(['profile.php'])}" aria-label="Профиль" title="Профиль">
+                    <img src="public/assets/icons/Icon_profile.png" alt="Профиль">
                 </a>
-                <a href="#" class="header__icon" aria-label="Избранное">
-                    <img src="public/assets/icons/Icon_favorite.png" alt="">
+                <a href="favorites.php" class="header__icon ${isActive(['favorites.php'])}" aria-label="Избранное" title="Избранное">
+                    <img src="public/assets/icons/Icon_favorite.png" alt="Избранное">
                 </a>
             </nav>
         </header>
@@ -34,7 +42,7 @@ class AuthButtons extends HTMLElement {
 
         this.innerHTML = `
         <div class="auth-bar">
-            <button class="auth-btn auth-btn--login" id="btn-login">Вход</button>
+            <button class="auth-btn auth-btn--login"    id="btn-login">Вход</button>
             <button class="auth-btn auth-btn--register" id="btn-register">Регистрация</button>
         </div>
 
@@ -42,7 +50,6 @@ class AuthButtons extends HTMLElement {
             <div class="modal" role="dialog" aria-modal="true">
                 <button class="modal__close" id="btn-close" aria-label="Закрыть">✕</button>
 
-                <!-- Форма входа -->
                 <form class="form-panel" id="panel-login" method="POST">
                     <input type="hidden" name="action" value="login">
                     <div class="form__title">Вход</div>
@@ -63,7 +70,6 @@ class AuthButtons extends HTMLElement {
                     <button class="form__btn form__btn--secondary" id="btn-go-register" type="button">Зарегистрироваться</button>
                 </form>
 
-                <!-- Форма регистрации -->
                 <form class="form-panel" id="panel-register" method="POST">
                     <input type="hidden" name="action" value="register">
                     <div class="form__title">Создать аккаунт</div>
