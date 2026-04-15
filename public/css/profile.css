@@ -1,0 +1,376 @@
+/* ─── PROFILE PAGE ─────────────────────────────────────── */
+
+/* Незалогиненный */
+.profile-guest {
+    max-width: 480px;
+    margin: 80px auto;
+    text-align: center;
+    padding: 0 20px;
+}
+
+.profile-guest__icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    color: #ccc;
+}
+
+.profile-guest__title {
+    font-size: 24px;
+    font-weight: normal;
+    margin-bottom: 8px;
+}
+
+.profile-guest__sub {
+    font-size: 15px;
+    color: var(--color-text-muted);
+    margin-bottom: 32px;
+}
+
+.profile-guest__btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.profile-guest__btns .auth-btn {
+    padding: 10px 28px;
+    font-size: 15px;
+}
+
+/* Залогиненный */
+.profile-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 20px 40px;
+}
+
+/* ─── ШАПКА ПРОФИЛЯ ──────────────────────────────────── */
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #ddd;
+}
+
+.profile-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.profile-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #ccc;
+    display: block;
+}
+
+.profile-avatar--placeholder {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: var(--color-brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.profile-avatar-upload {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+.profile-avatar-upload:hover {
+    background: #a86500;
+}
+
+#avatar-file-input {
+    display: none;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-name {
+    font-size: 26px;
+    font-weight: normal;
+    margin-bottom: 4px;
+}
+
+.profile-email {
+    font-size: 14px;
+    color: var(--color-text-muted);
+    margin-bottom: 12px;
+}
+
+.profile-desc-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.profile-desc {
+    font-size: 14px;
+    color: #444;
+    flex: 1;
+}
+
+.profile-desc--placeholder {
+    color: #aaa;
+    font-style: italic;
+}
+
+.profile-desc-edit {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: var(--radius-sm);
+    padding: 2px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.profile-desc-edit:hover { background: #eee; }
+
+.profile-desc-textarea {
+    width: 100%;
+    font-size: 14px;
+    border: 1px solid #bbb;
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    resize: vertical;
+    min-height: 60px;
+    font-family: inherit;
+    background: #e8e8e8;
+}
+
+.profile-desc-save {
+    margin-top: 6px;
+    background: var(--color-brand);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 5px 14px;
+    font-size: 13px;
+    cursor: pointer;
+}
+.profile-desc-save:hover { background: var(--color-brand-light); }
+
+.profile-logout {
+    margin-left: auto;
+    align-self: flex-start;
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: var(--radius-sm);
+    padding: 6px 16px;
+    font-size: 13px;
+    color: #666;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.profile-logout:hover {
+    background: #fee;
+    color: #c00;
+    border-color: #f99;
+}
+
+/* ─── СТАТИСТИКА ─────────────────────────────────────── */
+.profile-stats {
+    display: flex;
+    gap: 0;
+    border: 1px solid #ddd;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-bottom: 32px;
+}
+
+.stat-item {
+    flex: 1;
+    text-align: center;
+    padding: 16px 10px;
+    border-right: 1px solid #ddd;
+}
+.stat-item:last-child { border-right: none; }
+
+.stat-num {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--color-accent);
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+
+/* ─── СЕКЦИИ ─────────────────────────────────────────── */
+.profile-section-title {
+    font-size: 20px;
+    font-weight: normal;
+    margin-bottom: 16px;
+    color: var(--color-accent);
+}
+
+/* ─── СЕТКА ОЦЕНОК (как favorites) ──────────────────── */
+.ratings-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid #bbb;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 32px;
+}
+
+.rating-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid #ddd;
+    gap: 8px;
+    min-width: 0;
+}
+
+.rating-item:nth-child(3n+1),
+.rating-item:nth-child(3n+2) {
+    border-right: 1px solid #ddd;
+}
+
+.rating-item:nth-last-child(-n+3) {
+    border-bottom: none;
+}
+.rating-item:last-child,
+.rating-item:nth-last-child(2):nth-child(3n+1),
+.rating-item:nth-last-child(2):nth-child(3n+2) {
+    border-bottom: none;
+}
+
+.rating-item__info {
+    min-width: 0;
+    flex: 1;
+}
+
+.rating-item__title {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rating-item__title a:hover { text-decoration: underline; }
+
+.rating-item__author {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rating-item__right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.rating-item__score {
+    font-size: 15px;
+    font-weight: bold;
+    color: var(--color-accent);
+}
+
+.rating-item__badge {
+    font-size: 10px;
+    background: #e8e8e8;
+    border-radius: var(--radius-pill);
+    padding: 1px 7px;
+    color: #555;
+}
+
+/* ─── СПИСОК ПОНРАВИВШИХСЯ РЕЦЕНЗИЙ ──────────────────── */
+.liked-reviews {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.liked-review-card {
+    border: 1px solid #ddd;
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+}
+
+.liked-review-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+}
+
+.liked-review-card__poem {
+    font-size: 14px;
+    font-weight: 500;
+}
+.liked-review-card__poem a:hover { text-decoration: underline; }
+
+.liked-review-card__score {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--color-accent);
+    flex-shrink: 0;
+}
+
+.liked-review-card__author {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-bottom: 6px;
+}
+
+.liked-review-card__title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.liked-review-card__text {
+    font-size: 13px;
+    color: #444;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.profile-empty {
+    color: var(--color-text-muted);
+    font-size: 14px;
+    padding: 20px 0;
+    text-align: center;
+    border: 1px dashed #ddd;
+    border-radius: var(--radius-md);
+    margin-bottom: 32px;
+}

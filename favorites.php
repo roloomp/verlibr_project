@@ -3,57 +3,54 @@ session_start();
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/config/auth.php';
 
-// Если не залогинен — редирект на главную
-if (empty($_SESSION['logged_in'])) {
-    header('Location: /');
-    exit;
+$logged_in = !empty($_SESSION['logged_in']);
+
+$poems = [];
+$total_pages = 1;
+$page = 1;
+$sort = 'новые';
+
+if ($logged_in) {
+    $conn    = db_connect();
+    $user_id = (int)$_SESSION['user_id'];
+
+    $per_page = 24;
+    $page     = max(1, (int)($_GET['page'] ?? 1));
+    $offset   = ($page - 1) * $per_page;
+
+    $sort_map = [
+        'новые'  => 'f.created_at DESC',
+        'лучшие' => 'avg_score DESC',
+        'старые' => 'f.created_at ASC',
+    ];
+    $sort = $_GET['sort'] ?? 'новые';
+    if (!isset($sort_map[$sort])) $sort = 'новые';
+    $order = $sort_map[$sort];
+
+    $stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM favorites f WHERE f.user_id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $total = (int)$stmt->get_result()->fetch_assoc()['cnt'];
+    $total_pages = max(1, (int)ceil($total / $per_page));
+
+    $stmt = $conn->prepare("
+        SELECT p.id, p.title, p.author, p.year,
+               ROUND(AVG(CASE WHEN r.has_review = 1 THEN r.total_score END), 0) AS avg_with,
+               ROUND(AVG(CASE WHEN r.has_review = 0 THEN r.total_score END), 0) AS avg_without,
+               ROUND(AVG(r.total_score), 0) AS avg_score,
+               f.created_at AS fav_date
+        FROM favorites f
+        JOIN poems p ON p.id = f.poem_id
+        LEFT JOIN ratings r ON r.poem_id = p.id
+        WHERE f.user_id = ?
+        GROUP BY p.id, f.created_at
+        ORDER BY {$order}
+        LIMIT ? OFFSET ?
+    ");
+    $stmt->bind_param("iii", $user_id, $per_page, $offset);
+    $stmt->execute();
+    $poems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
-
-$conn    = db_connect();
-$user_id = (int)$_SESSION['user_id'];
-
-// Пагинация
-$per_page    = 24;
-$page        = max(1, (int)($_GET['page'] ?? 1));
-$offset      = ($page - 1) * $per_page;
-
-// Сортировка
-$sort_map = [
-    'новые'   => 'f.created_at DESC',
-    'лучшие'  => 'avg_score DESC',
-    'старые'  => 'f.created_at ASC',
-];
-$sort = $_GET['sort'] ?? 'новые';
-if (!isset($sort_map[$sort])) $sort = 'новые';
-$order = $sort_map[$sort];
-
-// Общее кол-во
-$stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM favorites f WHERE f.user_id = ?");
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$total = (int)$stmt->get_result()->fetch_assoc()['cnt'];
-$total_pages = max(1, (int)ceil($total / $per_page));
-
-// Стихи из избранного
-$stmt = $conn->prepare("
-    SELECT p.id, p.title, p.author, p.year,
-           ROUND(AVG(CASE WHEN r.has_review = 1 THEN r.total_score END), 0) AS avg_with,
-           ROUND(AVG(CASE WHEN r.has_review = 0 THEN r.total_score END), 0) AS avg_without,
-           ROUND(AVG(r.total_score), 0) AS avg_score,
-           f.created_at AS fav_date
-    FROM favorites f
-    JOIN poems p ON p.id = f.poem_id
-    LEFT JOIN ratings r ON r.poem_id = p.id
-    WHERE f.user_id = ?
-    GROUP BY p.id, f.created_at
-    ORDER BY {$order}
-    LIMIT ? OFFSET ?
-");
-$stmt->bind_param("iii", $user_id, $per_page, $offset);
-$stmt->execute();
-$poems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-
-$user_name = htmlspecialchars($_SESSION['user_name'] ?? '');
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -66,6 +63,28 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? '');
 </head>
 <body>
     <my-header></my-header>
+
+    <?php if (!$logged_in): ?>
+
+    <!-- auth-buttons даёт нам модалку через window.openAuthModal -->
+    <auth-buttons></auth-buttons>
+
+    <main>
+        <div class="fav-page">
+            <div class="fav-header">
+                <h1 class="fav-title">Избранное</h1>
+            </div>
+            <div class="fav-empty">
+                <p style="margin-bottom: 16px;">Войдите в аккаунт, чтобы увидеть избранное</p>
+                <div style="display:flex; gap:12px; justify-content:center">
+                    <button class="auth-btn auth-btn--login" onclick="window.openAuthModal('login')">Войти</button>
+                    <button class="auth-btn auth-btn--register" onclick="window.openAuthModal('register')">Регистрация</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <?php else: ?>
 
     <main class="fav-page">
         <div class="fav-header">
@@ -104,15 +123,12 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? '');
             <?php endforeach; ?>
         </div>
 
-        <!-- Пагинация -->
         <?php if ($total_pages > 1): ?>
         <nav class="pagination">
             <?php if ($page > 1): ?>
                 <a href="?sort=<?= urlencode($sort) ?>&page=<?= $page - 1 ?>">‹</a>
             <?php endif; ?>
-
             <?php
-            // Показываем: первую, последнюю, текущую ±2, и ... между ними
             $pages_to_show = [];
             for ($i = 1; $i <= $total_pages; $i++) {
                 if ($i === 1 || $i === $total_pages || abs($i - $page) <= 2) {
@@ -129,7 +145,6 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? '');
             <?php
                 $prev = $p;
             endforeach; ?>
-
             <?php if ($page < $total_pages): ?>
                 <a href="?sort=<?= urlencode($sort) ?>&page=<?= $page + 1 ?>">›</a>
             <?php endif; ?>
@@ -138,6 +153,8 @@ $user_name = htmlspecialchars($_SESSION['user_name'] ?? '');
 
         <?php endif; ?>
     </main>
+
+    <?php endif; ?>
 
     <script src="public/js/header.js"></script>
 </body>
