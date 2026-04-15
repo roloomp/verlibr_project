@@ -375,9 +375,12 @@ button {
     border: 1px solid #bbb;
     border-radius: 10px;
     overflow: hidden;
+    align-items: start;
 }
 .column {
     padding: 20px;
+    display: flex;
+    flex-direction: column;
 }
 .column:not(:last-child) {
     border-right: 1px solid #bbb;
@@ -388,6 +391,10 @@ button {
     font-size: 1.1rem;
     margin-bottom: 16px;
     font-weight: normal;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .ms-item {
@@ -395,6 +402,7 @@ button {
     justify-content: space-between;
     align-items: flex-start;
     gap: 8px;
+    min-height: 44px;
 }
 .item-title {
     font-size: 15px;
@@ -418,7 +426,7 @@ button {
     border: none;
     height: 1px;
     background: #ccc;
-    margin: 6px 0;
+    margin: 0;
 }
 
 
@@ -427,6 +435,7 @@ button {
     display: flex;
     align-items: center;
     padding: 4px 0;
+    min-height: 44px;
 }
 
 .author-left {

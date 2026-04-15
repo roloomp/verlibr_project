@@ -1,0 +1,58 @@
+<?php
+declare(strict_types=1);
+session_start();
+require_once __DIR__ . '/../../config/db.php';
+
+header('Content-Type: application/json; charset=utf-8');
+
+if (empty($_SESSION['logged_in'])) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Не авторизован'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+$poem_id = (int)($_POST['poem_id'] ?? 0);
+$user_id = (int)$_SESSION['user_id'];
+
+if ($poem_id <= 0) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Неверный id'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+$conn = db_connect();
+
+// Ensure likes table exists
+$conn->query("CREATE TABLE IF NOT EXISTS likes (
+    id       INT AUTO_INCREMENT PRIMARY KEY,
+    user_id  INT NOT NULL,
+    poem_id  INT NOT NULL,
+    created_at DATETIME DEFAULT NOW(),
+    UNIQUE KEY uq_like (user_id, poem_id)
+)");
+
+// Check if already liked
+$stmt = $conn->prepare("SELECT id FROM likes WHERE user_id = ? AND poem_id = ?");
+$stmt->bind_param("ii", $user_id, $poem_id);
+$stmt->execute();
+$exists = $stmt->get_result()->num_rows > 0;
+
+if ($exists) {
+    $stmt = $conn->prepare("DELETE FROM likes WHERE user_id = ? AND poem_id = ?");
+    $stmt->bind_param("ii", $user_id, $poem_id);
+    $stmt->execute();
+    $action = 'removed';
+} else {
+    $stmt = $conn->prepare("INSERT INTO likes (user_id, poem_id) VALUES (?, ?)");
+    $stmt->bind_param("ii", $user_id, $poem_id);
+    $stmt->execute();
+    $action = 'added';
+}
+
+// Get current count
+$stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM likes WHERE poem_id = ?");
+$stmt->bind_param("i", $poem_id);
+$stmt->execute();
+$count = (int)$stmt->get_result()->fetch_assoc()['cnt'];
+
+echo json_encode(['action' => $action, 'count' => $count], JSON_UNESCAPED_UNICODE);

@@ -438,3 +438,120 @@
     height: 1px;
     background: #ddd;
 }
+
+/* Like / Favourite active states */
+.poem-action--like.active,
+.poem-action--fav.active {
+    color: var(--color-accent);
+}
+
+/* ─── POEM PRE (correct line breaks) ────────────────────── */
+.poem-pre {
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.9;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+    color: #222;
+}
+
+/* ─── EXISTING RATING BLOCK ──────────────────────────────── */
+.rate-existing {
+    border: 1px solid #ccc;
+    border-radius: var(--radius-md);
+    padding: 20px;
+}
+
+.rate-existing__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.rate-existing__label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.rate-delete-btn {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: var(--radius-sm);
+    padding: 4px 12px;
+    font-size: 13px;
+    color: #888;
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition);
+}
+.rate-delete-btn:hover {
+    background: #fee;
+    color: #c00;
+    border-color: #f99;
+}
+
+.rate-existing__scores {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 16px;
+}
+
+.rate-existing__total {
+    font-size: 40px;
+    font-weight: bold;
+    color: var(--color-accent);
+    line-height: 1;
+    white-space: nowrap;
+}
+.rate-existing__total sup {
+    font-size: 16px;
+    font-weight: normal;
+    color: var(--color-text-muted);
+}
+
+.rate-existing__breakdown {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--color-text-muted);
+}
+.breakdown-row b {
+    color: #333;
+    font-weight: 600;
+    min-width: 24px;
+    text-align: right;
+}
+
+.rate-existing__review {
+    border-top: 1px solid #eee;
+    padding-top: 14px;
+    margin-top: 4px;
+}
+.rate-existing__rev-title {
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+.rate-existing__rev-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+}
+
+/* Review like active */
+.review-like.active {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+}

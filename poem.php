@@ -54,6 +54,54 @@ $stmt->bind_param("i", $id);
 $stmt->execute();
 $similar = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
+// Количество лайков
+$conn->query("CREATE TABLE IF NOT EXISTS likes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    poem_id INT NOT NULL,
+    created_at DATETIME DEFAULT NOW(),
+    UNIQUE KEY uq_like (user_id, poem_id)
+)");
+$stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM likes WHERE poem_id = ?");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$like_count = (int)$stmt->get_result()->fetch_assoc()['cnt'];
+
+// Состояние лайка и избранного для текущего пользователя
+$user_liked = false;
+$user_favorited = false;
+if (!empty($_SESSION['logged_in'])) {
+    $uid = (int)$_SESSION['user_id'];
+    $stmt = $conn->prepare("SELECT id FROM likes WHERE user_id = ? AND poem_id = ?");
+    $stmt->bind_param("ii", $uid, $id);
+    $stmt->execute();
+    $user_liked = $stmt->get_result()->num_rows > 0;
+
+    $stmt = $conn->prepare("SELECT id FROM favorites WHERE user_id = ? AND poem_id = ?");
+    $stmt->bind_param("ii", $uid, $id);
+    $stmt->execute();
+    $user_favorited = $stmt->get_result()->num_rows > 0;
+}
+
+// Существующая оценка/рецензия текущего пользователя
+$user_rating = null;
+if (!empty($_SESSION['logged_in'])) {
+    $uid2 = (int)$_SESSION['user_id'];
+    $stmt = $conn->prepare("SELECT * FROM ratings WHERE poem_id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $id, $uid2);
+    $stmt->execute();
+    $user_rating = $stmt->get_result()->fetch_assoc();
+}
+
+// Таблица лайков рецензий
+$conn->query("CREATE TABLE IF NOT EXISTS review_likes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    review_id INT NOT NULL,
+    created_at DATETIME DEFAULT NOW(),
+    UNIQUE KEY uq_rev_like (user_id, review_id)
+)");
+
 // Рецензии
 $sort = $_GET['sort'] ?? 'новые';
 $order = $sort === 'лучшие' ? 'total_score DESC' : 'created_at DESC';
@@ -74,8 +122,34 @@ $stmt->bind_param("i", $id);
 $stmt->execute();
 $reviews = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
+// Лайки рецензий
+$review_likes_map = [];  // review_id => count
+$user_review_likes = []; // review_id => bool
+if (!empty($reviews)) {
+    $review_ids = array_column($reviews, 'id');
+    $in = implode(',', array_map('intval', $review_ids));
+    $res = $conn->query("SELECT review_id, COUNT(*) AS cnt FROM review_likes WHERE review_id IN ({$in}) GROUP BY review_id");
+    if ($res) while ($row = $res->fetch_assoc()) $review_likes_map[(int)$row['review_id']] = (int)$row['cnt'];
+
+    if (!empty($_SESSION['logged_in'])) {
+        $uid3 = (int)$_SESSION['user_id'];
+        $res = $conn->query("SELECT review_id FROM review_likes WHERE user_id = {$uid3} AND review_id IN ({$in})");
+        if ($res) while ($row = $res->fetch_assoc()) $user_review_likes[(int)$row['review_id']] = true;
+    }
+}
+
 $logged_in = !empty($_SESSION['logged_in']);
 $user_name = htmlspecialchars($_SESSION['user_name'] ?? '');
+
+// Обработка удаления своей оценки
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in && isset($_POST['delete_rating'])) {
+    $uid_del = (int)$_SESSION['user_id'];
+    $stmt = $conn->prepare("DELETE FROM ratings WHERE poem_id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $id, $uid_del);
+    $stmt->execute();
+    header("Location: poem.php?id={$id}");
+    exit;
+}
 
 // Обработка отправки оценки
 $review_error = '';
@@ -83,11 +157,11 @@ $review_ok = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
     $user_id     = (int)$_SESSION['user_id'];
     $has_review  = isset($_POST['review_text']) && trim($_POST['review_text']) !== '';
-    $sc_rhyme    = min(10, max(0, (int)($_POST['score_rhyme']         ?? 0)));
-    $sc_style    = min(10, max(0, (int)($_POST['score_style']         ?? 0)));
-    $sc_struct   = min(10, max(0, (int)($_POST['score_structure']     ?? 0)));
-    $sc_indiv    = min(10, max(0, (int)($_POST['score_individuality'] ?? 0)));
-    $sc_atmo     = min(10, max(0, (int)($_POST['score_atmosphere']    ?? 0)));
+    $sc_rhyme    = min(18, max(0, (int)($_POST["score_rhyme"]         ?? 0)));
+    $sc_style    = min(18, max(0, (int)($_POST['score_style']         ?? 0)));
+    $sc_struct   = min(18, max(0, (int)($_POST['score_structure']     ?? 0)));
+    $sc_indiv    = min(18, max(0, (int)($_POST['score_individuality'] ?? 0)));
+    $sc_atmo     = min(18, max(0, (int)($_POST['score_atmosphere']    ?? 0)));
     $total       = $sc_rhyme + $sc_style + $sc_struct + $sc_indiv + $sc_atmo;
     $rev_title   = trim($_POST['review_title'] ?? '');
     $rev_text    = trim($_POST['review_text']  ?? '');
@@ -153,13 +227,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
             </div>
 
             <div class="poem-content">
-                <?= nl2br(htmlspecialchars($poem['content'])) ?>
+                <pre class="poem-pre"><?= htmlspecialchars($poem['content']) ?></pre>
             </div>
 
             <!-- Действия под стихом -->
             <div class="poem-actions">
-                <button class="poem-action" title="Нравится">♡ <?= $total_count ?></button>
-                <button class="poem-action" title="В избранное">☆</button>
+                <button class="poem-action poem-action--like <?= $user_liked ? 'active' : '' ?>"
+                        id="btn-like"
+                        data-poem-id="<?= $id ?>"
+                        data-logged-in="<?= $logged_in ? '1' : '0' ?>"
+                        title="Нравится">
+                    <?= $user_liked ? '♥' : '♡' ?> <span id="like-count"><?= $like_count ?></span>
+                </button>
+                <button class="poem-action poem-action--fav <?= $user_favorited ? 'active' : '' ?>"
+                        id="btn-fav"
+                        data-poem-id="<?= $id ?>"
+                        data-logged-in="<?= $logged_in ? '1' : '0' ?>"
+                        title="В избранное">
+                    <?= $user_favorited ? '★' : '☆' ?>
+                </button>
                 <div class="poem-share">
                     <button class="poem-action" title="ВКонтакте">VK</button>
                     <button class="poem-action" title="Одноклассники">OK</button>
@@ -170,42 +256,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
             <div class="rate-section">
                 <h2 class="rate-title">Оценить работу</h2>
 
-                <div class="rate-tabs">
-                    <button class="rate-tab active" data-tab="review">Рецензия</button>
-                    <button class="rate-tab" data-tab="simple">Оценка без рецензии</button>
-                </div>
-
                 <?php if ($review_error): ?>
                     <div class="error-message" style="margin-bottom:10px"><?= htmlspecialchars($review_error) ?></div>
                 <?php endif; ?>
 
-                <?php if ($logged_in): ?>
+                <?php if (!$logged_in): ?>
+                <div class="rate-login-msg">
+                    <a href="#" id="login-to-rate">Войдите</a>, чтобы оставить оценку.
+                </div>
+
+                <?php elseif ($user_rating): ?>
+                <!-- Пользователь уже оценил: показываем его оценку с возможностью удалить -->
+                <div class="rate-existing">
+                    <div class="rate-existing__header">
+                        <span class="rate-existing__label">Ваша оценка</span>
+                        <form method="POST" style="display:inline" onsubmit="return confirm('Удалить вашу оценку?')">
+                            <input type="hidden" name="delete_rating" value="1">
+                            <button type="submit" class="rate-delete-btn" title="Удалить оценку">🗑 Удалить</button>
+                        </form>
+                    </div>
+                    <div class="rate-existing__scores">
+                        <div class="rate-existing__total"><?= (int)$user_rating['total_score'] ?><sup>/90</sup></div>
+                        <div class="rate-existing__breakdown">
+                            <div class="breakdown-row"><span>Рифмы / Образы</span><b><?= (int)$user_rating['score_rhyme'] ?></b></div>
+                            <div class="breakdown-row"><span>Структура / Ритмика</span><b><?= (int)$user_rating['score_structure'] ?></b></div>
+                            <div class="breakdown-row"><span>Реализация стиля</span><b><?= (int)$user_rating['score_style'] ?></b></div>
+                            <div class="breakdown-row"><span>Индивидуальность / Харизма</span><b><?= (int)$user_rating['score_individuality'] ?></b></div>
+                            <div class="breakdown-row"><span>Атмосфера / Вайб</span><b><?= (int)$user_rating['score_atmosphere'] ?></b></div>
+                        </div>
+                    </div>
+                    <?php if ($user_rating['has_review']): ?>
+                    <div class="rate-existing__review">
+                        <?php if ($user_rating['review_title']): ?>
+                        <div class="rate-existing__rev-title"><?= htmlspecialchars($user_rating['review_title']) ?></div>
+                        <?php endif; ?>
+                        <div class="rate-existing__rev-text"><?= nl2br(htmlspecialchars($user_rating['review_text'])) ?></div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <?php else: ?>
+                <!-- Форма новой оценки -->
+                <div class="rate-tabs">
+                    <button class="rate-tab active" data-tab="review">Рецензия</button>
+                    <button class="rate-tab" data-tab="simple">Оценка без рецензии</button>
+                </div>
                 <form class="rate-form" method="POST">
                     <div class="rate-sliders">
                         <div class="slider-row">
                             <label>Рифмы / Образы</label>
-                            <input type="range" name="score_rhyme" min="0" max="10" value="5" class="slider" data-out="out_rhyme">
-                            <span class="slider-val" id="out_rhyme">5</span>
+                            <input type="range" name="score_rhyme" min="0" max="18" value="9" class="slider" data-out="out_rhyme">
+                            <span class="slider-val" id="out_rhyme">9</span>
                         </div>
                         <div class="slider-row">
                             <label>Структура / Ритмика</label>
-                            <input type="range" name="score_structure" min="0" max="10" value="5" class="slider" data-out="out_structure">
-                            <span class="slider-val" id="out_structure">5</span>
+                            <input type="range" name="score_structure" min="0" max="18" value="9" class="slider" data-out="out_structure">
+                            <span class="slider-val" id="out_structure">9</span>
                         </div>
                         <div class="slider-row">
                             <label>Реализация стиля</label>
-                            <input type="range" name="score_style" min="0" max="10" value="5" class="slider" data-out="out_style">
-                            <span class="slider-val" id="out_style">5</span>
+                            <input type="range" name="score_style" min="0" max="18" value="9" class="slider" data-out="out_style">
+                            <span class="slider-val" id="out_style">9</span>
                         </div>
                         <div class="slider-row">
                             <label>Индивидуальность / Харизма</label>
-                            <input type="range" name="score_individuality" min="0" max="10" value="5" class="slider" data-out="out_individuality">
-                            <span class="slider-val" id="out_individuality">5</span>
+                            <input type="range" name="score_individuality" min="0" max="18" value="9" class="slider" data-out="out_individuality">
+                            <span class="slider-val" id="out_individuality">9</span>
                         </div>
                         <div class="slider-row slider-row--full">
                             <label>Атмосфера / Вайб</label>
-                            <input type="range" name="score_atmosphere" min="0" max="10" value="5" class="slider slider--accent" data-out="out_atmosphere">
-                            <span class="slider-val" id="out_atmosphere">5</span>
+                            <input type="range" name="score_atmosphere" min="0" max="18" value="9" class="slider slider--accent" data-out="out_atmosphere">
+                            <span class="slider-val" id="out_atmosphere">9</span>
                         </div>
                     </div>
 
@@ -221,14 +342,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                     </div>
 
                     <div class="rate-submit-row">
-                        <div class="total-score" id="total-score">25<sup>/50</sup></div>
+                        <div class="total-score" id="total-score">45<sup>/90</sup></div>
                         <button type="submit" class="rate-submit-btn" title="Отправить">✔</button>
                     </div>
                 </form>
-                <?php else: ?>
-                <div class="rate-login-msg">
-                    <a href="#" id="login-to-rate">Войдите</a>, чтобы оставить оценку.
-                </div>
                 <?php endif; ?>
             </div>
 
@@ -278,7 +395,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                     <?php endif; ?>
                     <div class="review-text"><?= nl2br(htmlspecialchars($rev['review_text'])) ?></div>
                     <div class="review-date"><?= date('d.m.Y', strtotime($rev['created_at'])) ?></div>
-                    <button class="review-like">♡ <?= rand(1,20) ?></button>
+                    <?php
+                    $rev_id = (int)$rev['id'];
+                    $rev_liked = !empty($user_review_likes[$rev_id]);
+                    $rev_cnt = $review_likes_map[$rev_id] ?? 0;
+                    ?>
+                    <button class="review-like <?= $rev_liked ? 'active' : '' ?>"
+                            data-review-id="<?= $rev_id ?>"
+                            data-logged-in="<?= $logged_in ? '1' : '0' ?>">
+                        <?= $rev_liked ? '♥' : '♡' ?> <span><?= $rev_cnt ?></span>
+                    </button>
                 </div>
                 <?php endforeach; ?>
             </div>
@@ -350,12 +476,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
     function updateTotal() {
         let sum = 0;
         sliders.forEach(s => { sum += parseInt(s.value); });
-        const maxTotal = sliders.length * 10;
+        const maxTotal = sliders.length * 18;
         document.getElementById('total-score').innerHTML = sum + '<sup>/' + maxTotal + '</sup>';
     }
     sliders.forEach(s => {
         const outId = s.dataset.out;
         const out = document.getElementById(outId);
+        if (out) out.textContent = s.value;
         s.addEventListener('input', () => {
             if (out) out.textContent = s.value;
             updateTotal();
@@ -385,6 +512,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
             tab.classList.add('active');
             const isReview = tab.dataset.tab === 'review';
             document.getElementById('review-fields').style.display = isReview ? 'block' : 'none';
+        });
+    });
+
+    // Лайк
+    document.getElementById('btn-like')?.addEventListener('click', async function() {
+        if (this.dataset.loggedIn !== '1') {
+            document.getElementById('btn-login-top')?.click();
+            return;
+        }
+        const poemId = this.dataset.poemId;
+        try {
+            const fd = new FormData();
+            fd.append('poem_id', poemId);
+            const res = await fetch('public/api/toggle_like.php', { method: 'POST', body: fd });
+            const data = await res.json();
+            const liked = data.action === 'added';
+            this.innerHTML = (liked ? '♥' : '♡') + ' <span id="like-count">' + data.count + '</span>';
+            this.classList.toggle('active', liked);
+        } catch(e) {}
+    });
+
+    // Избранное
+    document.getElementById('btn-fav')?.addEventListener('click', async function() {
+        if (this.dataset.loggedIn !== '1') {
+            document.getElementById('btn-login-top')?.click();
+            return;
+        }
+        const poemId = this.dataset.poemId;
+        try {
+            const fd = new FormData();
+            fd.append('poem_id', poemId);
+            const res = await fetch('public/api/toggle_favorite.php', { method: 'POST', body: fd });
+            const data = await res.json();
+            const faved = data.action === 'added';
+            this.textContent = faved ? '★' : '☆';
+            this.classList.toggle('active', faved);
+        } catch(e) {}
+    });
+
+    // Лайки рецензий
+    document.querySelectorAll('.review-like').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            if (this.dataset.loggedIn !== '1') {
+                document.getElementById('btn-login-top')?.click();
+                return;
+            }
+            const reviewId = this.dataset.reviewId;
+            try {
+                const fd = new FormData();
+                fd.append('review_id', reviewId);
+                const res = await fetch('public/api/toggle_review_like.php', { method: 'POST', body: fd });
+                const data = await res.json();
+                const liked = data.action === 'added';
+                this.querySelector('span').textContent = data.count;
+                this.innerHTML = (liked ? '♥' : '♡') + ' <span>' + data.count + '</span>';
+                this.classList.toggle('active', liked);
+            } catch(e) {}
         });
     });
     </script>
