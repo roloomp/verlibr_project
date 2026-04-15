@@ -1,6 +1,5 @@
 class MyHeader extends HTMLElement {
     connectedCallback() {
-        // Определяем текущую страницу для подсветки активной иконки
         const path = window.location.pathname;
         const page = path.split('/').pop() || 'index.php';
 
@@ -121,6 +120,9 @@ class AuthButtons extends HTMLElement {
         const closeModal = () => overlay.classList.remove('open');
 
         this._openModal = openModal;
+
+        // Глобальный доступ к модалке для других страниц
+        window.openAuthModal = (tab) => openModal(tab || 'login');
 
         this.querySelector('#btn-login').addEventListener('click', () => openModal('login'));
         this.querySelector('#btn-register').addEventListener('click', () => openModal('register'));

@@ -123,8 +123,8 @@ $stmt->execute();
 $reviews = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 // Лайки рецензий
-$review_likes_map = [];  // review_id => count
-$user_review_likes = []; // review_id => bool
+$review_likes_map = [];
+$user_review_likes = [];
 if (!empty($reviews)) {
     $review_ids = array_column($reviews, 'id');
     $in = implode(',', array_map('intval', $review_ids));
@@ -208,10 +208,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
     <my-header></my-header>
 
     <?php if (!$logged_in): ?>
-    <div class="auth-topbar">
-        <button class="auth-btn auth-btn--login" id="btn-login-top">Вход</button>
-        <button class="auth-btn auth-btn--register" id="btn-register-top">Регистрация</button>
-    </div>
+    <!-- auth-buttons содержит кнопки входа + модалку, работает на любой странице -->
+    <auth-buttons></auth-buttons>
     <?php endif; ?>
 
     <main class="poem-page">
@@ -266,7 +264,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                 </div>
 
                 <?php elseif ($user_rating): ?>
-                <!-- Пользователь уже оценил: показываем его оценку с возможностью удалить -->
                 <div class="rate-existing">
                     <div class="rate-existing__header">
                         <span class="rate-existing__label">Ваша оценка</span>
@@ -296,7 +293,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                 </div>
 
                 <?php else: ?>
-                <!-- Форма новой оценки -->
                 <div class="rate-tabs">
                     <button class="rate-tab active" data-tab="review">Рецензия</button>
                     <button class="rate-tab" data-tab="simple">Оценка без рецензии</button>
@@ -471,6 +467,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
 
     <script src="public/js/header.js"></script>
     <script>
+    // Вспомогательная функция: открыть модалку входа
+    // Работает и когда есть auth-buttons на странице (незалогинен),
+    // и когда её нет — просто ничего не происходит (залогинен — не нужно)
+    function requireLogin() {
+        if (typeof window.openAuthModal === 'function') {
+            window.openAuthModal('login');
+        }
+    }
+
+    // Ссылка "Войдите" в блоке оценки
+    document.getElementById('login-to-rate')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        requireLogin();
+    });
+
     // Слайдеры
     const sliders = document.querySelectorAll('.slider');
     function updateTotal() {
@@ -515,10 +526,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
         });
     });
 
-    // Лайк
+    // ─── ЛАЙК ────────────────────────────────────────────────
     document.getElementById('btn-like')?.addEventListener('click', async function() {
         if (this.dataset.loggedIn !== '1') {
-            document.getElementById('btn-login-top')?.click();
+            requireLogin();
             return;
         }
         const poemId = this.dataset.poemId;
@@ -530,13 +541,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
             const liked = data.action === 'added';
             this.innerHTML = (liked ? '♥' : '♡') + ' <span id="like-count">' + data.count + '</span>';
             this.classList.toggle('active', liked);
-        } catch(e) {}
+        } catch(e) { console.error('like error', e); }
     });
 
-    // Избранное
+    // ─── ИЗБРАННОЕ ───────────────────────────────────────────
     document.getElementById('btn-fav')?.addEventListener('click', async function() {
         if (this.dataset.loggedIn !== '1') {
-            document.getElementById('btn-login-top')?.click();
+            requireLogin();
             return;
         }
         const poemId = this.dataset.poemId;
@@ -545,17 +556,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
             fd.append('poem_id', poemId);
             const res = await fetch('public/api/toggle_favorite.php', { method: 'POST', body: fd });
             const data = await res.json();
+            if (data.error) { console.error('fav error', data.error); return; }
             const faved = data.action === 'added';
             this.textContent = faved ? '★' : '☆';
             this.classList.toggle('active', faved);
-        } catch(e) {}
+        } catch(e) { console.error('fav error', e); }
     });
 
-    // Лайки рецензий
+    // ─── ЛАЙКИ РЕЦЕНЗИЙ ──────────────────────────────────────
     document.querySelectorAll('.review-like').forEach(btn => {
         btn.addEventListener('click', async function() {
             if (this.dataset.loggedIn !== '1') {
-                document.getElementById('btn-login-top')?.click();
+                requireLogin();
                 return;
             }
             const reviewId = this.dataset.reviewId;
@@ -565,10 +577,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                 const res = await fetch('public/api/toggle_review_like.php', { method: 'POST', body: fd });
                 const data = await res.json();
                 const liked = data.action === 'added';
-                this.querySelector('span').textContent = data.count;
                 this.innerHTML = (liked ? '♥' : '♡') + ' <span>' + data.count + '</span>';
                 this.classList.toggle('active', liked);
-            } catch(e) {}
+            } catch(e) { console.error('review like error', e); }
         });
     });
     </script>
