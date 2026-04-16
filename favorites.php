@@ -66,8 +66,55 @@ if ($logged_in) {
 
     <?php if (!$logged_in): ?>
 
-    <!-- Кнопок входа сверху НЕТ — только модалка через auth-buttons -->
-    <auth-buttons></auth-buttons>
+    <!-- Модалка без кнопок сверху -->
+    <div class="overlay" id="overlay">
+        <div class="modal" role="dialog" aria-modal="true">
+            <button class="modal__close" id="btn-close" aria-label="Закрыть">✕</button>
+
+            <form class="form-panel" id="panel-login" method="POST" action="index.php">
+                <input type="hidden" name="action" value="login">
+                <div class="form__title">Вход</div>
+                <div class="form__subtitle">Введите свои данные для входа в аккаунт</div>
+
+                <label class="form__label">Email <span class="required">*</span></label>
+                <input class="form__input" type="email" placeholder="Ваш email" name="login_email" required>
+
+                <div class="form__label">
+                    Пароль <span class="required">*</span>
+                    <button type="button" class="form__link-btn">Забыли пароль?</button>
+                </div>
+                <input class="form__input" type="password" placeholder="Ваш пароль" name="login_password" required>
+
+                <button class="form__btn form__btn--primary" type="submit">Войти</button>
+                <button class="form__btn form__btn--secondary" id="btn-go-register" type="button">Зарегистрироваться</button>
+            </form>
+
+            <form class="form-panel" id="panel-register" method="POST" action="index.php">
+                <input type="hidden" name="action" value="register">
+                <div class="form__title">Создать аккаунт</div>
+
+                <label class="form__label">Email <span class="required">*</span></label>
+                <div class="form__hint">Будет также логином для авторизации</div>
+                <input class="form__input" type="email" placeholder="mail@example.com" name="register_email" required>
+
+                <label class="form__label">Отображаемое имя <span class="required">*</span></label>
+                <div class="form__hint">Ваш никнейм</div>
+                <input class="form__input" type="text" name="register_nickname" required>
+
+                <label class="form__label">Пароль <span class="required">*</span></label>
+                <input class="form__input" type="password" name="register_password" required>
+
+                <label class="form__label">Подтвердите пароль <span class="required">*</span></label>
+                <input class="form__input" type="password" name="register_verify_password" required>
+
+                <button class="form__btn form__btn--primary" type="submit">Создать аккаунт</button>
+                <p class="form__footer">
+                    Уже есть аккаунт?
+                    <button class="form__footer-btn" id="btn-go-login" type="button">Войти</button>
+                </p>
+            </form>
+        </div>
+    </div>
 
     <main>
         <div class="fav-page">
@@ -83,6 +130,31 @@ if ($logged_in) {
             </div>
         </div>
     </main>
+
+    <script>
+    (function() {
+        const overlay = document.getElementById('overlay');
+        const modal   = overlay.querySelector('.modal');
+        const panels  = overlay.querySelectorAll('.form-panel');
+
+        window.openAuthModal = function(tab) {
+            panels.forEach(p => p.classList.remove('active'));
+            overlay.querySelector('#panel-' + (tab || 'login')).classList.add('active');
+            overlay.classList.add('open');
+        };
+
+        document.getElementById('btn-close').addEventListener('click', () => overlay.classList.remove('open'));
+        document.getElementById('btn-go-register').addEventListener('click', () => window.openAuthModal('register'));
+        document.getElementById('btn-go-login').addEventListener('click', () => window.openAuthModal('login'));
+
+        overlay.addEventListener('click', (e) => {
+            if (!modal.contains(e.target)) overlay.classList.remove('open');
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') overlay.classList.remove('open');
+        });
+    })();
+    </script>
 
     <?php else: ?>
 
