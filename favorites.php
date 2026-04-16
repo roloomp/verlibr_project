@@ -66,7 +66,7 @@ if ($logged_in) {
 
     <?php if (!$logged_in): ?>
 
-    <!-- auth-buttons даёт нам модалку через window.openAuthModal -->
+    <!-- Кнопок входа сверху НЕТ — только модалка через auth-buttons -->
     <auth-buttons></auth-buttons>
 
     <main>

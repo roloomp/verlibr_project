@@ -37,132 +37,135 @@
     font-size: 15px;
 }
 
-/* Залогиненный */
+
+/* ─── ЗАЛОГИНЕННЫЙ: ОСНОВНОЙ КОНТЕЙНЕР ───────────────────── */
 .profile-page {
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 24px 20px 40px;
 }
 
-/* ─── ШАПКА ПРОФИЛЯ ──────────────────────────────────── */
-.profile-header {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    margin-bottom: 32px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid #ddd;
+
+/* ─── ВЕРХНИЙ БЛОК: карточка + баннер ───────────────────── */
+.profile-top {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+    align-items: stretch;
 }
 
+
+/* ─── КАРТОЧКА ПРОФИЛЯ (левая часть) ─────────────────────── */
+.profile-card {
+    border: 1px solid #bbb;
+    border-radius: 10px;
+    padding: 24px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+}
+
+/* Аватар — овальный как в макете */
 .profile-avatar-wrap {
     position: relative;
-    flex-shrink: 0;
+    margin-bottom: 4px;
 }
 
 .profile-avatar {
-    width: 90px;
-    height: 90px;
+    width: 140px;
+    height: 110px;
     border-radius: 50%;
     object-fit: cover;
-    background: #ccc;
     display: block;
+    background: #ccc;
 }
 
 .profile-avatar--placeholder {
-    width: 90px;
-    height: 90px;
+    width: 140px;
+    height: 110px;
     border-radius: 50%;
     background: var(--color-brand);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 36px;
+    font-size: 48px;
     color: white;
-    flex-shrink: 0;
 }
 
 .profile-avatar-upload {
     position: absolute;
-    bottom: 0;
-    right: 0;
+    bottom: 2px;
+    right: 2px;
     background: var(--color-accent);
     color: white;
     border: none;
     border-radius: 50%;
     width: 26px;
     height: 26px;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    line-height: 1;
 }
-.profile-avatar-upload:hover {
-    background: #a86500;
+.profile-avatar-upload:hover { background: #a86500; }
+
+.profile-card__name {
+    font-size: 20px;
+    font-weight: 500;
+    text-align: center;
 }
 
-#avatar-file-input {
-    display: none;
-}
-
-.profile-info {
-    flex: 1;
-}
-
-.profile-name {
-    font-size: 26px;
-    font-weight: normal;
-    margin-bottom: 4px;
-}
-
-.profile-email {
-    font-size: 14px;
+.profile-card__date {
+    font-size: 12px;
     color: var(--color-text-muted);
-    margin-bottom: 12px;
+    text-align: center;
 }
 
-.profile-desc-wrap {
+/* Биография */
+.profile-card__bio {
+    font-size: 13px;
+    color: #444;
+    text-align: center;
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: 6px;
+    width: 100%;
+    justify-content: center;
 }
 
-.profile-desc {
-    font-size: 14px;
-    color: #444;
-    flex: 1;
-}
-
-.profile-desc--placeholder {
+.profile-card__bio--placeholder {
     color: #aaa;
     font-style: italic;
 }
 
-.profile-desc-edit {
+.profile-card__bio-edit {
     background: none;
-    border: 1px solid #ccc;
-    border-radius: var(--radius-sm);
-    padding: 2px 8px;
-    font-size: 12px;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 13px;
     cursor: pointer;
+    padding: 0;
     flex-shrink: 0;
 }
-.profile-desc-edit:hover { background: #eee; }
+.profile-card__bio-edit:hover { color: var(--color-accent); }
 
-.profile-desc-textarea {
+.profile-bio-textarea {
     width: 100%;
-    font-size: 14px;
+    font-size: 13px;
     border: 1px solid #bbb;
     border-radius: var(--radius-sm);
     padding: 8px 10px;
     resize: vertical;
-    min-height: 60px;
+    min-height: 70px;
     font-family: inherit;
     background: #e8e8e8;
 }
 
-.profile-desc-save {
+.profile-bio-save {
     margin-top: 6px;
     background: var(--color-brand);
     color: white;
@@ -172,11 +175,23 @@
     font-size: 13px;
     cursor: pointer;
 }
-.profile-desc-save:hover { background: var(--color-brand-light); }
+.profile-bio-save:hover { background: var(--color-brand-light); }
+
+.profile-bio-cancel {
+    margin-top: 6px;
+    margin-left: 6px;
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: var(--radius-sm);
+    padding: 5px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #666;
+}
+.profile-bio-cancel:hover { background: #eee; }
 
 .profile-logout {
-    margin-left: auto;
-    align-self: flex-start;
+    margin-top: 8px;
     background: none;
     border: 1px solid #ccc;
     border-radius: var(--radius-sm);
@@ -184,7 +199,7 @@
     font-size: 13px;
     color: #666;
     cursor: pointer;
-    flex-shrink: 0;
+    width: 100%;
 }
 .profile-logout:hover {
     background: #fee;
@@ -192,7 +207,97 @@
     border-color: #f99;
 }
 
-/* ─── СТАТИСТИКА ─────────────────────────────────────── */
+
+/* ─── БАННЕР (правая часть) ──────────────────────────────── */
+.profile-banner-wrap {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    min-height: 200px;
+}
+
+.profile-banner {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.profile-banner--placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 200px;
+    background: linear-gradient(135deg, #888 0%, #555 100%);
+}
+
+.profile-banner-upload {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: var(--radius-sm);
+    padding: 5px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background var(--transition);
+}
+.profile-banner-upload:hover { background: rgba(0,0,0,0.7); }
+
+
+/* ─── ВКЛАДКИ ────────────────────────────────────────────── */
+.profile-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.profile-tab {
+    padding: 8px 18px;
+    border: 1px solid #bbb;
+    border-radius: var(--radius-pill);
+    font-size: 14px;
+    color: #444;
+    background: #f0f0f0;
+    text-decoration: none;
+    transition: background var(--transition), color var(--transition);
+}
+.profile-tab:hover { background: #e0e0e0; }
+.profile-tab.active {
+    background: var(--color-brand);
+    color: white;
+    border-color: var(--color-brand);
+}
+
+
+/* ─── ПОДВКЛАДКИ ─────────────────────────────────────────── */
+.profile-subtabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.profile-subtab {
+    padding: 6px 16px;
+    border: 1px solid #bbb;
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    color: #555;
+    background: #f8f8f8;
+    text-decoration: none;
+    transition: background var(--transition);
+}
+.profile-subtab:hover { background: #eee; }
+.profile-subtab.active {
+    background: var(--color-brand);
+    color: white;
+    border-color: var(--color-brand);
+}
+
+
+/* ─── СТАТИСТИКА ─────────────────────────────────────────── */
 .profile-stats {
     display: flex;
     gap: 0;
@@ -205,13 +310,13 @@
 .stat-item {
     flex: 1;
     text-align: center;
-    padding: 16px 10px;
+    padding: 20px 10px;
     border-right: 1px solid #ddd;
 }
 .stat-item:last-child { border-right: none; }
 
 .stat-num {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: bold;
     color: var(--color-accent);
 }
@@ -219,18 +324,11 @@
 .stat-label {
     font-size: 12px;
     color: var(--color-text-muted);
-    margin-top: 2px;
+    margin-top: 4px;
 }
 
-/* ─── СЕКЦИИ ─────────────────────────────────────────── */
-.profile-section-title {
-    font-size: 20px;
-    font-weight: normal;
-    margin-bottom: 16px;
-    color: var(--color-accent);
-}
 
-/* ─── СЕТКА ОЦЕНОК (как favorites) ──────────────────── */
+/* ─── СЕТКА ОЦЕНОК ───────────────────────────────────────── */
 .ratings-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -255,14 +353,10 @@
     border-right: 1px solid #ddd;
 }
 
-.rating-item:nth-last-child(-n+3) {
-    border-bottom: none;
-}
+.rating-item:nth-last-child(-n+3) { border-bottom: none; }
 .rating-item:last-child,
 .rating-item:nth-last-child(2):nth-child(3n+1),
-.rating-item:nth-last-child(2):nth-child(3n+2) {
-    border-bottom: none;
-}
+.rating-item:nth-last-child(2):nth-child(3n+2) { border-bottom: none; }
 
 .rating-item__info {
     min-width: 0;
@@ -309,7 +403,8 @@
     color: #555;
 }
 
-/* ─── СПИСОК ПОНРАВИВШИХСЯ РЕЦЕНЗИЙ ──────────────────── */
+
+/* ─── ПОНРАВИВШИЕСЯ РЕЦЕНЗИИ ─────────────────────────────── */
 .liked-reviews {
     display: flex;
     flex-direction: column;
@@ -327,7 +422,7 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .liked-review-card__poem {
@@ -365,12 +460,15 @@
     overflow: hidden;
 }
 
+
+/* ─── ПУСТОЕ СОСТОЯНИЕ ───────────────────────────────────── */
 .profile-empty {
     color: var(--color-text-muted);
     font-size: 14px;
-    padding: 20px 0;
+    padding: 30px 0;
     text-align: center;
-    border: 1px dashed #ddd;
+    border: 1px solid #eee;
     border-radius: var(--radius-md);
+    background: #f9f9f9;
     margin-bottom: 32px;
 }

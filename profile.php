@@ -5,79 +5,90 @@ require_once __DIR__ . '/config/auth.php';
 
 $logged_in = !empty($_SESSION['logged_in']);
 
-// Обработка загрузки аватара
-if ($logged_in && isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-    $uid = (int)$_SESSION['user_id'];
-    $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mime = finfo_file($finfo, $_FILES['avatar']['tmp_name']);
-    finfo_close($finfo);
+// Обработка выхода
+if ($logged_in && isset($_POST['logout'])) {
+    session_destroy();
+    header('Location: /');
+    exit;
+}
 
-    if (in_array($mime, $allowed_types) && $_FILES['avatar']['size'] < 2 * 1024 * 1024) {
-        $ext = pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION);
-        $filename = 'public/uploads/avatars/' . $uid . '_' . time() . '.' . strtolower($ext);
-        @mkdir(dirname($filename), 0755, true);
-        if (move_uploaded_file($_FILES['avatar']['tmp_name'], $filename)) {
-            $conn = db_connect();
-            $stmt = $conn->prepare("UPDATE profile SET avatar = ? WHERE id = ?");
-            $stmt->bind_param("si", $filename, $uid);
-            $stmt->execute();
+if (!$logged_in) {
+    // Незалогиненный — покажем заглушку
+    $user = null;
+} else {
+    $conn    = db_connect();
+    $user_id = (int)$_SESSION['user_id'];
+
+    // Загрузка аватара
+    if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+        $ext      = strtolower(pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION));
+        $allowed  = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        if (in_array($ext, $allowed, true)) {
+            $dir  = __DIR__ . '/public/uploads/avatars/';
+            if (!is_dir($dir)) mkdir($dir, 0755, true);
+            $fname = 'avatar_' . $user_id . '_' . time() . '.' . $ext;
+            if (move_uploaded_file($_FILES['avatar']['tmp_name'], $dir . $fname)) {
+                $path = 'public/uploads/avatars/' . $fname;
+                $stmt = $conn->prepare("UPDATE profile SET avatar = ? WHERE id = ?");
+                $stmt->bind_param("si", $path, $user_id);
+                $stmt->execute();
+            }
         }
     }
-    header('Location: profile.php');
-    exit;
-}
 
-// Обработка сохранения описания
-if ($logged_in && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_desc'])) {
-    $uid = (int)$_SESSION['user_id'];
-    $desc = trim($_POST['description'] ?? '');
-    $desc = mb_substr($desc, 0, 500, 'UTF-8');
-    $conn = db_connect();
-    $stmt = $conn->prepare("UPDATE profile SET description = ? WHERE id = ?");
-    $stmt->bind_param("si", $desc, $uid);
-    $stmt->execute();
-    header('Location: profile.php');
-    exit;
-}
+    // Загрузка баннера
+    if (isset($_FILES['banner']) && $_FILES['banner']['error'] === UPLOAD_ERR_OK) {
+        $ext      = strtolower(pathinfo($_FILES['banner']['name'], PATHINFO_EXTENSION));
+        $allowed  = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        if (in_array($ext, $allowed, true)) {
+            $dir  = __DIR__ . '/public/uploads/banners/';
+            if (!is_dir($dir)) mkdir($dir, 0755, true);
+            $fname = 'banner_' . $user_id . '_' . time() . '.' . $ext;
+            if (move_uploaded_file($_FILES['banner']['tmp_name'], $dir . $fname)) {
+                $path = 'public/uploads/banners/' . $fname;
+                $stmt = $conn->prepare("UPDATE profile SET banner = ? WHERE id = ?");
+                $stmt->bind_param("si", $path, $user_id);
+                $stmt->execute();
+            }
+        }
+    }
 
-// Данные для залогиненного
-$user = null;
-$ratings = [];
-$liked_reviews = [];
-$stats = ['ratings' => 0, 'reviews' => 0, 'likes_given' => 0, 'favs' => 0];
-
-if ($logged_in) {
-    $conn = db_connect();
-    $uid = (int)$_SESSION['user_id'];
+    // Сохранение биографии
+    if (isset($_POST['save_bio'])) {
+        $bio = mb_substr(trim($_POST['bio'] ?? ''), 0, 300, 'UTF-8');
+        $stmt = $conn->prepare("UPDATE profile SET bio = ? WHERE id = ?");
+        $stmt->bind_param("si", $bio, $user_id);
+        $stmt->execute();
+    }
 
     // Данные пользователя
-    $stmt = $conn->prepare("SELECT id, name, email, avatar, description FROM profile WHERE id = ?");
-    $stmt->bind_param("i", $uid);
+    $stmt = $conn->prepare("SELECT id, name, email, avatar, banner, bio, created_at FROM profile WHERE id = ?");
+    $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
 
     // Статистика
     $stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM ratings WHERE user_id = ?");
-    $stmt->bind_param("i", $uid);
+    $stmt->bind_param("i", $user_id);
     $stmt->execute();
-    $stats['ratings'] = (int)$stmt->get_result()->fetch_assoc()['cnt'];
+    $ratings_count = (int)$stmt->get_result()->fetch_assoc()['cnt'];
 
     $stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM ratings WHERE user_id = ? AND has_review = 1");
-    $stmt->bind_param("i", $uid);
+    $stmt->bind_param("i", $user_id);
     $stmt->execute();
-    $stats['reviews'] = (int)$stmt->get_result()->fetch_assoc()['cnt'];
-
-    // likes таблица может не существовать — игнорируем ошибку
-    $res = $conn->query("SELECT COUNT(*) AS cnt FROM likes WHERE user_id = {$uid}");
-    if ($res) $stats['likes_given'] = (int)$res->fetch_assoc()['cnt'];
+    $reviews_count = (int)$stmt->get_result()->fetch_assoc()['cnt'];
 
     $stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM favorites WHERE user_id = ?");
-    $stmt->bind_param("i", $uid);
+    $stmt->bind_param("i", $user_id);
     $stmt->execute();
-    $stats['favs'] = (int)$stmt->get_result()->fetch_assoc()['cnt'];
+    $fav_count = (int)$stmt->get_result()->fetch_assoc()['cnt'];
 
-    // Свои оценки (последние 24)
+    $stmt = $conn->prepare("SELECT ROUND(AVG(total_score), 1) AS avg FROM ratings WHERE user_id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $avg_score = $stmt->get_result()->fetch_assoc()['avg'] ?? '—';
+
+    // Оценки пользователя
     $stmt = $conn->prepare("
         SELECT r.id, r.total_score, r.has_review, r.created_at,
                p.id AS poem_id, p.title, p.author
@@ -85,36 +96,32 @@ if ($logged_in) {
         JOIN poems p ON p.id = r.poem_id
         WHERE r.user_id = ?
         ORDER BY r.created_at DESC
-        LIMIT 24
+        LIMIT 30
     ");
-    $stmt->bind_param("i", $uid);
+    $stmt->bind_param("i", $user_id);
     $stmt->execute();
-    $ratings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $my_ratings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
     // Понравившиеся рецензии
-    $conn->query("CREATE TABLE IF NOT EXISTS review_likes (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        review_id INT NOT NULL,
-        created_at DATETIME DEFAULT NOW(),
-        UNIQUE KEY uq_rev_like (user_id, review_id)
-    )");
     $stmt = $conn->prepare("
         SELECT rv.id, rv.total_score, rv.review_title, rv.review_text,
-               p.id AS poem_id, p.title AS poem_title, p.author AS poem_author,
-               u.name AS reviewer_name
+               rv.created_at, u.name AS reviewer_name,
+               p.id AS poem_id, p.title AS poem_title, p.author AS poem_author
         FROM review_likes rl
         JOIN ratings rv ON rv.id = rl.review_id
-        JOIN poems p ON p.id = rv.poem_id
-        JOIN profile u ON u.id = rv.user_id
-        WHERE rl.user_id = ? AND rv.has_review = 1
+        JOIN profile u  ON u.id  = rv.user_id
+        JOIN poems p    ON p.id  = rv.poem_id
+        WHERE rl.user_id = ?
         ORDER BY rl.created_at DESC
-        LIMIT 10
+        LIMIT 20
     ");
-    $stmt->bind_param("i", $uid);
+    $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $liked_reviews = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
+
+$active_tab    = $_GET['tab']    ?? 'ratings';
+$active_subtab = $_GET['subtab'] ?? 'reviews';
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -130,11 +137,13 @@ if ($logged_in) {
 
     <?php if (!$logged_in): ?>
 
+    <!-- Кнопок входа сверху НЕТ — модалка через auth-buttons -->
+    <auth-buttons></auth-buttons>
 
     <main>
         <div class="profile-guest">
             <div class="profile-guest__icon">👤</div>
-            <h1 class="profile-guest__title">Вы не вошли в аккаунт</h1>
+            <h1 class="profile-guest__title">Вы не авторизованы</h1>
             <p class="profile-guest__sub">Войдите или зарегистрируйтесь, чтобы увидеть свой профиль</p>
             <div class="profile-guest__btns">
                 <button class="auth-btn auth-btn--login" onclick="window.openAuthModal('login')">Войти</button>
@@ -147,85 +156,126 @@ if ($logged_in) {
 
     <main class="profile-page">
 
-        <!-- Шапка профиля -->
-        <div class="profile-header">
+        <!-- ─── ВЕРХНИЙ БЛОК: карточка + баннер ─────────────────── -->
+        <div class="profile-top">
 
-            <!-- Аватар -->
-            <div class="profile-avatar-wrap">
-                <?php if (!empty($user['avatar'])): ?>
-                    <img class="profile-avatar" src="<?= htmlspecialchars($user['avatar']) ?>" alt="Аватар">
-                <?php else: ?>
-                    <div class="profile-avatar--placeholder">
-                        <?= mb_strtoupper(mb_substr($user['name'], 0, 1, 'UTF-8'), 'UTF-8') ?>
+            <!-- Карточка пользователя слева -->
+            <div class="profile-card">
+                <!-- Аватар -->
+                <form method="POST" enctype="multipart/form-data" id="avatar-form">
+                    <div class="profile-avatar-wrap">
+                        <?php if (!empty($user['avatar'])): ?>
+                            <img class="profile-avatar" src="<?= htmlspecialchars($user['avatar']) ?>" alt="Аватар">
+                        <?php else: ?>
+                            <div class="profile-avatar profile-avatar--placeholder">
+                                <?= mb_strtoupper(mb_substr($user['name'], 0, 1, 'UTF-8'), 'UTF-8') ?>
+                            </div>
+                        <?php endif; ?>
+                        <button type="button" class="profile-avatar-upload" title="Сменить аватар"
+                                onclick="document.getElementById('avatar-file-input').click()">✎</button>
+                        <input type="file" name="avatar" id="avatar-file-input"
+                               accept="image/*" style="display:none"
+                               onchange="this.form.submit()">
                     </div>
-                <?php endif; ?>
-                <form method="POST" enctype="multipart/form-data" style="display:inline">
-                    <button type="button" class="profile-avatar-upload" title="Сменить фото"
-                            onclick="document.getElementById('avatar-file-input').click()">✎</button>
-                    <input type="file" id="avatar-file-input" name="avatar" accept="image/*"
-                           onchange="this.form.submit()">
+                </form>
+
+                <div class="profile-card__name"><?= htmlspecialchars($user['name']) ?></div>
+                <div class="profile-card__date">
+                    Дата регистрации: <?= date('d.m.Y', strtotime($user['created_at'])) ?>
+                </div>
+
+                <!-- Биография -->
+                <div class="profile-card__bio" id="bio-display">
+                    <?php if (!empty($user['bio'])): ?>
+                        <span><?= nl2br(htmlspecialchars($user['bio'])) ?></span>
+                    <?php else: ?>
+                        <span class="profile-card__bio--placeholder">Биография так называемая</span>
+                    <?php endif; ?>
+                    <button type="button" class="profile-card__bio-edit" onclick="toggleBioEdit()">✎</button>
+                </div>
+                <form method="POST" id="bio-form" style="display:none">
+                    <textarea class="profile-bio-textarea" name="bio" maxlength="300"
+                        placeholder="Расскажите о себе (до 300 символов)"><?= htmlspecialchars($user['bio'] ?? '') ?></textarea>
+                    <button type="submit" name="save_bio" class="profile-bio-save">Сохранить</button>
+                    <button type="button" class="profile-bio-cancel" onclick="toggleBioEdit()">Отмена</button>
+                </form>
+
+                <!-- Выход -->
+                <form method="POST" style="margin-top:auto">
+                    <button type="submit" name="logout" class="profile-logout">Выйти</button>
                 </form>
             </div>
 
-            <!-- Инфо -->
-            <div class="profile-info">
-                <div class="profile-name"><?= htmlspecialchars($user['name']) ?></div>
-                <div class="profile-email"><?= htmlspecialchars($user['email']) ?></div>
-
-                <!-- Описание -->
-                <div id="desc-view" class="profile-desc-wrap">
-                    <?php if (!empty($user['description'])): ?>
-                        <span class="profile-desc"><?= nl2br(htmlspecialchars($user['description'])) ?></span>
-                    <?php else: ?>
-                        <span class="profile-desc profile-desc--placeholder">Нет описания</span>
-                    <?php endif; ?>
-                    <button class="profile-desc-edit" onclick="toggleDescEdit(true)">✎</button>
-                </div>
-                <div id="desc-edit" style="display:none">
-                    <form method="POST">
-                        <textarea class="profile-desc-textarea" name="description"
-                                  maxlength="500" placeholder="Расскажите о себе (до 500 символов)"><?= htmlspecialchars($user['description'] ?? '') ?></textarea>
-                        <div>
-                            <button type="submit" name="save_desc" value="1" class="profile-desc-save">Сохранить</button>
-                            <button type="button" class="profile-desc-edit" onclick="toggleDescEdit(false)" style="margin-left:8px">Отмена</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Выход -->
-            <a href="logout.php" class="profile-logout"
-               onclick="return confirm('Выйти из аккаунта?')">Выйти</a>
-        </div>
-
-        <!-- Статистика -->
-        <div class="profile-stats">
-            <div class="stat-item">
-                <div class="stat-num"><?= $stats['ratings'] ?></div>
-                <div class="stat-label">Оценок</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-num"><?= $stats['reviews'] ?></div>
-                <div class="stat-label">Рецензий</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-num"><?= $stats['likes_given'] ?></div>
-                <div class="stat-label">Лайков отдано</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-num"><?= $stats['favs'] ?></div>
-                <div class="stat-label">В избранном</div>
+            <!-- Баннер справа -->
+            <div class="profile-banner-wrap">
+                <?php if (!empty($user['banner'])): ?>
+                    <img class="profile-banner" src="<?= htmlspecialchars($user['banner']) ?>" alt="Обложка">
+                <?php else: ?>
+                    <div class="profile-banner profile-banner--placeholder"></div>
+                <?php endif; ?>
+                <form method="POST" enctype="multipart/form-data" id="banner-form">
+                    <button type="button" class="profile-banner-upload" title="Сменить обложку"
+                            onclick="document.getElementById('banner-file-input').click()">✎ Сменить обложку</button>
+                    <input type="file" name="banner" id="banner-file-input"
+                           accept="image/*" style="display:none"
+                           onchange="this.form.submit()">
+                </form>
             </div>
         </div>
 
-        <!-- Мои оценки -->
-        <h2 class="profile-section-title">Мои оценки</h2>
+        <!-- ─── ВКЛАДКИ ───────────────────────────────────────────── -->
+        <div class="profile-tabs">
+            <a href="?tab=ratings"
+               class="profile-tab <?= $active_tab === 'ratings' ? 'active' : '' ?>">Рецензии и оценка</a>
+            <a href="?tab=stats"
+               class="profile-tab <?= $active_tab === 'stats'   ? 'active' : '' ?>">Статистика</a>
+            <a href="?tab=liked"
+               class="profile-tab <?= $active_tab === 'liked'   ? 'active' : '' ?>">Понравилось</a>
+        </div>
 
-        <?php if (empty($ratings)): ?>
-        <div class="profile-empty">Вы ещё не оценили ни одного стихотворения</div>
+        <!-- ─── КОНТЕНТ ВКЛАДОК ───────────────────────────────────── -->
+
+        <?php if ($active_tab === 'ratings'): ?>
+
+        <!-- Подвкладки -->
+        <div class="profile-subtabs">
+            <a href="?tab=ratings&subtab=reviews"
+               class="profile-subtab <?= $active_subtab === 'reviews' ? 'active' : '' ?>">Рецензии</a>
+            <a href="?tab=ratings&subtab=scores"
+               class="profile-subtab <?= $active_subtab === 'scores'  ? 'active' : '' ?>">Оценки</a>
+        </div>
+
+        <?php if ($active_subtab === 'reviews'): ?>
+        <!-- Только рецензии -->
+        <?php $only_reviews = array_filter($my_ratings, fn($r) => $r['has_review']); ?>
+        <?php if (empty($only_reviews)): ?>
+            <div class="profile-empty">Вы ещё не оставляли рецензий</div>
         <?php else: ?>
         <div class="ratings-grid">
-            <?php foreach ($ratings as $r): ?>
+            <?php foreach ($only_reviews as $r): ?>
+            <div class="rating-item">
+                <div class="rating-item__info">
+                    <div class="rating-item__title">
+                        <a href="poem.php?id=<?= $r['poem_id'] ?>"><?= htmlspecialchars($r['title']) ?></a>
+                    </div>
+                    <div class="rating-item__author"><?= htmlspecialchars($r['author']) ?></div>
+                </div>
+                <div class="rating-item__right">
+                    <span class="rating-item__score"><?= (int)$r['total_score'] ?></span>
+                    <span class="rating-item__badge">рецензия</span>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+
+        <?php else: ?>
+        <!-- Все оценки -->
+        <?php if (empty($my_ratings)): ?>
+            <div class="profile-empty">Вы ещё ничего не оценивали</div>
+        <?php else: ?>
+        <div class="ratings-grid">
+            <?php foreach ($my_ratings as $r): ?>
             <div class="rating-item">
                 <div class="rating-item__info">
                     <div class="rating-item__title">
@@ -236,52 +286,75 @@ if ($logged_in) {
                 <div class="rating-item__right">
                     <span class="rating-item__score"><?= (int)$r['total_score'] ?></span>
                     <?php if ($r['has_review']): ?>
-                    <span class="rating-item__badge">рецензия</span>
+                        <span class="rating-item__badge">рецензия</span>
                     <?php endif; ?>
                 </div>
             </div>
             <?php endforeach; ?>
         </div>
         <?php endif; ?>
+        <?php endif; ?>
 
-        <!-- Понравившиеся рецензии -->
-        <h2 class="profile-section-title">Понравившиеся рецензии</h2>
+        <?php elseif ($active_tab === 'stats'): ?>
+
+        <div class="profile-stats">
+            <div class="stat-item">
+                <div class="stat-num"><?= $ratings_count ?></div>
+                <div class="stat-label">Оценок</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num"><?= $reviews_count ?></div>
+                <div class="stat-label">Рецензий</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num"><?= $fav_count ?></div>
+                <div class="stat-label">В избранном</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num"><?= $avg_score ?: '—' ?></div>
+                <div class="stat-label">Средняя оценка</div>
+            </div>
+        </div>
+
+        <?php elseif ($active_tab === 'liked'): ?>
 
         <?php if (empty($liked_reviews)): ?>
-        <div class="profile-empty">Вы ещё не лайкали рецензии</div>
+            <div class="profile-empty">Вы ещё не лайкали рецензии</div>
         <?php else: ?>
         <div class="liked-reviews">
-            <?php foreach ($liked_reviews as $lr): ?>
+            <?php foreach ($liked_reviews as $rev): ?>
             <div class="liked-review-card">
                 <div class="liked-review-card__header">
                     <div class="liked-review-card__poem">
-                        <a href="poem.php?id=<?= $lr['poem_id'] ?>"><?= htmlspecialchars($lr['poem_title']) ?></a>
+                        <a href="poem.php?id=<?= $rev['poem_id'] ?>"><?= htmlspecialchars($rev['poem_title']) ?></a>
                     </div>
-                    <div class="liked-review-card__score"><?= (int)$lr['total_score'] ?></div>
+                    <div class="liked-review-card__score"><?= (int)$rev['total_score'] ?></div>
                 </div>
-                <div class="liked-review-card__author">
-                    <?= htmlspecialchars($lr['poem_author']) ?> · <?= htmlspecialchars($lr['reviewer_name']) ?>
-                </div>
-                <?php if ($lr['review_title']): ?>
-                <div class="liked-review-card__title"><?= htmlspecialchars($lr['review_title']) ?></div>
+                <div class="liked-review-card__author"><?= htmlspecialchars($rev['poem_author']) ?> · <?= htmlspecialchars($rev['reviewer_name']) ?></div>
+                <?php if ($rev['review_title']): ?>
+                    <div class="liked-review-card__title"><?= htmlspecialchars($rev['review_title']) ?></div>
                 <?php endif; ?>
-                <div class="liked-review-card__text"><?= htmlspecialchars($lr['review_text']) ?></div>
+                <div class="liked-review-card__text"><?= nl2br(htmlspecialchars($rev['review_text'])) ?></div>
             </div>
             <?php endforeach; ?>
         </div>
         <?php endif; ?>
 
-    </main>
+        <?php endif; ?>
 
-    <script>
-    function toggleDescEdit(show) {
-        document.getElementById('desc-view').style.display = show ? 'none' : 'flex';
-        document.getElementById('desc-edit').style.display = show ? 'block' : 'none';
-    }
-    </script>
+    </main>
 
     <?php endif; ?>
 
     <script src="public/js/header.js"></script>
+    <script>
+    function toggleBioEdit() {
+        const display = document.getElementById('bio-display');
+        const form    = document.getElementById('bio-form');
+        const isHidden = form.style.display === 'none';
+        display.style.display = isHidden ? 'none' : 'flex';
+        form.style.display    = isHidden ? 'block' : 'none';
+    }
+    </script>
 </body>
 </html>
