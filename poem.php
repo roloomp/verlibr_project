@@ -389,7 +389,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                     <?php if ($rev['review_title']): ?>
                     <div class="review-rev-title"><?= htmlspecialchars($rev['review_title']) ?></div>
                     <?php endif; ?>
-                    <div class="review-text"><?= nl2br(htmlspecialchars($rev['review_text'])) ?></div>
+                    <div class="review-text" style="white-space: pre-wrap; word-wrap: break-word;"><?= nl2br(htmlspecialchars($rev['review_text'])) ?></div>
                     <div class="review-date"><?= date('d.m.Y', strtotime($rev['created_at'])) ?></div>
                     <?php
                     $rev_id = (int)$rev['id'];
