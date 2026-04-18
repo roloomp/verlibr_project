@@ -45,13 +45,6 @@ $stmt->bind_param("i", $id);
 $stmt->execute();
 $similar = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-$conn->query("CREATE TABLE IF NOT EXISTS likes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    poem_id INT NOT NULL,
-    created_at DATETIME DEFAULT NOW(),
-    UNIQUE KEY uq_like (user_id, poem_id)
-)");
 $stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM likes WHERE poem_id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();
@@ -81,13 +74,7 @@ if ($logged_in) {
     $user_rating = $stmt->get_result()->fetch_assoc();
 }
 
-$conn->query("CREATE TABLE IF NOT EXISTS review_likes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    review_id INT NOT NULL,
-    created_at DATETIME DEFAULT NOW(),
-    UNIQUE KEY uq_rev_like (user_id, review_id)
-)");
+
 
 $sort  = $_GET['sort'] ?? 'новые';
 $order = $sort === 'лучшие' ? 'total_score DESC' : 'created_at DESC';

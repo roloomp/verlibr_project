@@ -27,14 +27,6 @@ if ($review_id <= 0) {
 
 $conn = db_connect();
 
-$conn->query("CREATE TABLE IF NOT EXISTS review_likes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    review_id INT NOT NULL,
-    created_at DATETIME DEFAULT NOW(),
-    UNIQUE KEY uq_rev_like (user_id, review_id)
-)");
-
 $stmt = $conn->prepare("SELECT id FROM review_likes WHERE user_id = ? AND review_id = ?");
 $stmt->bind_param("ii", $user_id, $review_id);
 $stmt->execute();

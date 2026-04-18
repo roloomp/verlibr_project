@@ -28,14 +28,6 @@ if ($poem_id <= 0) {
 
 $conn = db_connect();
 
-$conn->query("CREATE TABLE IF NOT EXISTS likes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    poem_id INT NOT NULL,
-    created_at DATETIME DEFAULT NOW(),
-    UNIQUE KEY uq_like (user_id, poem_id)
-)");
-
 $stmt = $conn->prepare("SELECT id FROM likes WHERE user_id = ? AND poem_id = ?");
 $stmt->bind_param("ii", $user_id, $poem_id);
 $stmt->execute();
@@ -58,4 +50,7 @@ $stmt->bind_param("i", $poem_id);
 $stmt->execute();
 $count = (int)$stmt->get_result()->fetch_assoc()['cnt'];
 
-echo json_encode(['action' => $action, 'count' => $count]);
+echo json_encode([
+    'action' => $action,
+    'count' => $count
+]);
