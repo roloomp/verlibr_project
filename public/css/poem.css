@@ -1,569 +1,516 @@
-/* ─── POEM PAGE LAYOUT ───────────────────────────────────── */
-.poem-page {
-    display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 0;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 24px 20px;
-    align-items: start;
+.poem-page { 
+    display: grid; 
+    grid-template-columns: 1fr 320px; 
+    gap: 0; 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    padding: 24px 20px; 
+    align-items: start; 
+}
+.poem-main { 
+    padding-right: 40px; 
+    border-right: 1px solid #ddd; 
+}
+.poem-title { 
+    font-size: 28px; 
+    font-weight: normal; 
+    margin-bottom: 6px; 
+}
+.poem-meta { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    margin-bottom: 24px; 
+    font-size: 14px; 
+    color: var(--color-text-muted); 
+}
+.poem-author { 
+    font-style: italic; 
+    color: var(--color-text-muted); 
+}
+.poem-author:hover { 
+    text-decoration: underline; 
+}
+.poem-dot { 
+    color: #bbb; 
+}
+.poem-content { 
+    font-size: 15px; 
+    line-height: 1.8; 
+    white-space: pre-wrap; 
+    margin-bottom: 24px; 
+    color: #222; 
+}
+.poem-pre { 
+    font-family: inherit; 
+    font-size: 15px; 
+    line-height: 1.9; 
+    white-space: pre-wrap; 
+    word-break: break-word; 
+    margin: 0; 
+    color: #222; 
 }
 
-/* ─── LEFT: poem content ─────────────────────────────────── */
-.poem-main {
-    padding-right: 40px;
-    border-right: 1px solid #ddd;
+.poem-actions { 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    margin-bottom: 32px; 
+    padding-bottom: 16px; 
+    border-bottom: 1px solid #eee; 
+}
+.poem-action { 
+    background: none; 
+    border: none; 
+    font-size: 15px; 
+    color: var(--color-text-muted); 
+    cursor: pointer; 
+    padding: 4px 6px; 
+    border-radius: var(--radius-sm); 
+    transition: color var(--transition); 
+}
+.poem-action:hover { 
+    color: var(--color-accent); 
+}
+.poem-share { 
+    display: flex; 
+    gap: 8px; 
+    margin-left: auto; 
+}
+.poem-action--like.active, .poem-action--fav.active { 
+    color: var(--color-accent); 
 }
 
-.poem-title {
-    font-size: 28px;
-    font-weight: normal;
-    margin-bottom: 6px;
+.rate-section { 
+    margin-bottom: 40px; 
+}
+.rate-title { 
+    font-size: 22px; 
+    font-weight: normal; 
+    margin-bottom: 16px; 
+}
+.rate-tabs { 
+    display: flex; 
+    margin-bottom: 16px; 
+}
+.rate-tab { 
+    padding: 10px 20px; 
+    font-size: 14px; 
+    border: 1px solid #ccc; 
+    background: #e8e8e8; 
+    color: #555; 
+    cursor: pointer; 
+    transition: background var(--transition); 
+}
+.rate-tab:first-child { 
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm); 
+}
+.rate-tab:last-child  { 
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0; 
+}
+.rate-tab.active { 
+    background: var(--color-brand); 
+    color: white; 
+    border-color: var(--color-brand); 
 }
 
-.poem-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 24px;
-    font-size: 14px;
-    color: var(--color-text-muted);
+.rate-form { 
+    border: 1px solid #ccc; 
+    border-radius: var(--radius-md); 
+    padding: 20px; 
+}
+.rate-sliders { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 12px 24px; 
+    margin-bottom: 16px; 
+}
+.slider-row { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 4px; 
+}
+.slider-row--full { 
+    grid-column: 1 / -1; 
+}
+.slider-row label { 
+    font-size: 12px; 
+    color: var(--color-text-muted); 
+}
+.slider { 
+    width: 100%; 
+    accent-color: var(--color-brand); 
+    cursor: pointer; 
+}
+.slider--accent { 
+    accent-color: var(--color-accent); 
+}
+.slider-val { 
+    font-size: 13px; 
+    font-weight: bold; 
+    text-align: right; 
 }
 
-.poem-author {
-    font-style: italic;
-    color: var(--color-text-muted);
+.review-fields { 
+    display: block; 
 }
-.poem-author:hover { text-decoration: underline; }
-
-.poem-dot { color: #bbb; }
-
-.poem-content {
-    font-size: 15px;
-    line-height: 1.8;
-    white-space: pre-wrap;
-    margin-bottom: 24px;
-    color: #222;
+.review-textarea { 
+    height: 120px; 
+    resize: vertical; 
+    margin-top: 10px; 
 }
-
-/* ─── ACTIONS ────────────────────────────────────────────── */
-.poem-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 32px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #eee;
+.review-footer { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-top: 6px; 
+    font-size: 12px; 
+    color: var(--color-text-muted); 
 }
-
-.poem-action {
-    background: none;
-    border: none;
-    font-size: 15px;
-    color: var(--color-text-muted);
-    cursor: pointer;
-    padding: 4px 6px;
-    border-radius: var(--radius-sm);
-    transition: color var(--transition);
+.clear-btn { 
+    background: none; 
+    border: 1px solid #ccc; 
+    border-radius: var(--radius-sm); 
+    padding: 4px 10px; 
+    font-size: 12px; 
+    cursor: pointer; 
 }
-.poem-action:hover { color: var(--color-accent); }
-
-.poem-share {
-    display: flex;
-    gap: 8px;
-    margin-left: auto;
+.clear-btn:hover { 
+    background: #eee; 
 }
 
-
-/* ─── RATE SECTION ───────────────────────────────────────── */
-.rate-section {
-    margin-bottom: 40px;
+.rate-submit-row { 
+    display: flex; 
+    align-items: center; 
+    justify-content: flex-end; 
+    gap: 12px; 
+    margin-top: 14px; 
+}
+.total-score { 
+    font-size: 28px; 
+    font-weight: bold; 
+    color: #333; 
+}
+.total-score sup { 
+    font-size: 14px; 
+    font-weight: normal; 
+    color: var(--color-text-muted); 
+}
+.rate-submit-btn { 
+    width: 40px; 
+    height: 40px; 
+    border-radius: 50%; 
+    background: var(--color-accent); 
+    color: white; 
+    border: none; 
+    font-size: 18px; 
+    cursor: pointer; 
+    transition: background var(--transition); 
+}
+.rate-submit-btn:hover { 
+    background: #a86500; 
+}
+.rate-login-msg { 
+    padding: 16px; 
+    font-size: 14px; 
+    color: var(--color-text-muted); 
+    text-align: center; 
+}
+.rate-login-msg a { 
+    color: var(--color-brand); 
+    text-decoration: underline; 
 }
 
-.rate-title {
-    font-size: 22px;
-    font-weight: normal;
-    margin-bottom: 16px;
+.rate-existing { 
+    border: 1px solid #ccc; 
+    border-radius: var(--radius-md); 
+    padding: 20px; 
+}
+.rate-existing__header { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    margin-bottom: 16px; 
+}
+.rate-existing__label { 
+    font-size: 14px; 
+    font-weight: 600; 
+    color: var(--color-text-muted); 
+    text-transform: uppercase; 
+    letter-spacing: 0.05em; 
+}
+.rate-delete-btn { 
+    background: none; 
+    border: 1px solid #ccc; 
+    border-radius: var(--radius-sm); 
+    padding: 4px 12px; 
+    font-size: 13px; 
+    color: #888; 
+    cursor: pointer; 
+}
+.rate-delete-btn:hover { 
+    background: #fee; 
+    color: #c00; 
+    border-color: #f99; 
+}
+.rate-existing__scores { 
+    display: flex; 
+    align-items: flex-start; 
+    gap: 24px; 
+    margin-bottom: 16px; 
+}
+.rate-existing__total { 
+    font-size: 40px; 
+    font-weight: bold; 
+    color: var(--color-accent); 
+    line-height: 1; 
+    white-space: nowrap; 
+}
+.rate-existing__total sup { 
+    font-size: 16px; 
+    font-weight: normal; 
+    color: var(--color-text-muted); 
+}
+.rate-existing__breakdown { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 5px; 
+}
+.breakdown-row { 
+    display: flex; 
+    justify-content: space-between; 
+    font-size: 13px; 
+    color: var(--color-text-muted); 
+}
+.breakdown-row b { 
+    color: #333; 
+    font-weight: 600; 
+    min-width: 24px; 
+    text-align: right; 
+}
+.rate-existing__review { 
+    border-top: 1px solid #eee; 
+    padding-top: 14px; 
+    margin-top: 4px; 
+}
+.rate-existing__rev-title { 
+    font-size: 15px; 
+    font-weight: bold; 
+    margin-bottom: 8px; 
+    word-break: break-word; 
+}
+.rate-existing__rev-text { 
+    font-size: 14px; 
+    line-height: 1.6; 
+    color: #333; 
+    word-break: break-word; 
 }
 
-.rate-tabs {
-    display: flex;
-    border-bottom: none;
-    margin-bottom: 16px;
-    gap: 0;
+.reviews-section { 
+    margin-top: 8px; 
+}
+.reviews-header { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    margin-bottom: 16px; 
+}
+.reviews-title { 
+    font-size: 20px; 
+    font-weight: normal; 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+}
+.reviews-badge { 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    background: var(--color-accent); 
+    color: white; 
+    border-radius: 50%; 
+    width: 24px; 
+    height: 24px; 
+    font-size: 13px; 
+}
+.reviews-sort { 
+    border: 1px solid #ccc; 
+    border-radius: var(--radius-sm); 
+    padding: 4px 8px; 
+    font-size: 13px; 
+    cursor: pointer; 
+}
+.reviews-empty { 
+    background: #f0f0f0; 
+    padding: 16px; 
+    text-align: center; 
+    color: var(--color-text-muted); 
+    border-radius: var(--radius-sm); 
 }
 
-.rate-tab {
-    padding: 10px 20px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    background: #e8e8e8;
-    color: #555;
-    cursor: pointer;
-    transition: background var(--transition);
+.review-card { 
+    border: 1px solid #ddd; 
+    border-radius: var(--radius-md); 
+    padding: 16px; 
+    margin-bottom: 16px; 
 }
-.rate-tab:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
-.rate-tab:last-child  { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
-.rate-tab.active {
-    background: var(--color-brand);
-    color: white;
-    border-color: var(--color-brand);
+.review-card-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-start; 
+    margin-bottom: 12px; 
 }
-
-.rate-form {
-    border: 1px solid #ccc;
-    border-radius: var(--radius-md);
-    padding: 20px;
+.review-user { 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
 }
-
-/* Слайдеры в сетке 2 колонки */
-.rate-sliders {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px 24px;
-    margin-bottom: 16px;
+.review-avatar { 
+    width: 36px; 
+    height: 36px; 
+    border-radius: 50%; 
+    object-fit: cover; 
 }
-
-.slider-row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+.review-avatar--placeholder { 
+    width: 36px; 
+    height: 36px; 
+    border-radius: 50%; 
+    background: #ccc; 
+    display: inline-block; 
 }
-.slider-row--full {
-    grid-column: 1 / -1;
+.review-username { 
+    font-size: 15px; 
+    font-weight: 500; 
 }
-
-.slider-row label {
-    font-size: 12px;
-    color: var(--color-text-muted);
+.review-scores { 
+    text-align: right; 
 }
-
-.slider {
-    width: 100%;
-    accent-color: var(--color-brand);
-    cursor: pointer;
+.review-total { 
+    font-size: 22px; 
+    font-weight: bold; 
+    color: #333; 
 }
-.slider--accent {
-    accent-color: var(--color-accent);
+.review-subscores { 
+    font-size: 11px; 
+    color: var(--color-text-light); 
+    letter-spacing: 3px; 
 }
-
-.slider-val {
-    font-size: 13px;
-    font-weight: bold;
-    text-align: right;
+.review-rev-title { 
+    font-size: 16px; 
+    font-weight: bold; 
+    margin-bottom: 8px; 
+    word-break: break-word; 
 }
-
-/* Поля рецензии */
-.review-fields {
-    display: block;
+.review-text { 
+    font-size: 14px; 
+    line-height: 1.6; 
+    color: #333; 
+    margin-bottom: 10px; 
+    word-break: break-word; 
 }
-.review-textarea {
-    height: 120px;
-    resize: vertical;
-    margin-top: 10px;
+.review-date { 
+    font-size: 11px; 
+    color: var(--color-text-light); 
+    margin-bottom: 8px; 
 }
-.review-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 6px;
-    font-size: 12px;
-    color: var(--color-text-muted);
+.review-like { 
+    background: none; 
+    border: 1px solid #ccc; 
+    border-radius: var(--radius-pill); 
+    padding: 3px 10px; 
+    font-size: 13px; 
+    cursor: pointer; 
 }
-.clear-btn {
-    background: none;
-    border: 1px solid #ccc;
-    border-radius: var(--radius-sm);
-    padding: 4px 10px;
-    font-size: 12px;
-    cursor: pointer;
+.review-like:hover { 
+    background: #f0f0f0; 
 }
-.clear-btn:hover { background: #eee; }
-
-.rate-submit-row {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 14px;
+.review-like.active { 
+    color: var(--color-accent); 
+    border-color: var(--color-accent); 
 }
 
-.total-score {
-    font-size: 28px;
-    font-weight: bold;
-    color: #333;
+.poem-sidebar { 
+    padding-left: 24px; 
+    position: sticky; 
+    top: 20px; 
 }
-.total-score sup {
-    font-size: 14px;
-    font-weight: normal;
-    color: var(--color-text-muted);
+.sidebar-block { 
+    margin-bottom: 24px; 
 }
-
-.rate-submit-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--color-accent);
-    color: white;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
-    transition: background var(--transition);
+.sidebar-block__title { 
+    font-size: 11px; 
+    font-weight: bold; 
+    letter-spacing: 0.1em; 
+    color: var(--color-accent); 
+    margin-bottom: 10px; 
+    padding-bottom: 4px; 
+    border-bottom: 1px solid var(--color-accent); 
 }
-.rate-submit-btn:hover { background: #a86500; }
-
-.rate-login-msg {
-    padding: 16px;
-    font-size: 14px;
-    color: var(--color-text-muted);
-    text-align: center;
+.tag-row { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    font-size: 13px; 
+    margin-bottom: 6px; 
 }
-.rate-login-msg a { color: var(--color-brand); text-decoration: underline; }
-
-
-/* ─── REVIEWS ────────────────────────────────────────────── */
-.reviews-section { margin-top: 8px; }
-
-.reviews-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
+.tag-label { 
+    color: var(--color-text-muted); 
 }
-
-.reviews-title {
-    font-size: 20px;
-    font-weight: normal;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+.tag-badge { 
+    background: #e8e8e8; 
+    border-radius: var(--radius-pill); 
+    padding: 2px 10px; 
+    font-size: 12px; 
+    color: #333; 
 }
-
-.reviews-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--color-accent);
-    color: white;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    font-size: 13px;
+.rating-row { 
+    display: flex; 
+    align-items: baseline; 
+    gap: 4px; 
+    flex-wrap: wrap; 
+    margin-bottom: 6px; 
 }
-
-.reviews-sort {
-    border: 1px solid #ccc;
-    border-radius: var(--radius-sm);
-    padding: 4px 8px;
-    font-size: 13px;
-    cursor: pointer;
+.rating-big { 
+    font-size: 26px; 
+    font-weight: bold; 
+    color: var(--color-accent); 
 }
-
-.reviews-empty {
-    background: #f0f0f0;
-    padding: 16px;
-    text-align: center;
-    color: var(--color-text-muted);
-    border-radius: var(--radius-sm);
+.rating-max { 
+    font-size: 14px; 
+    color: var(--color-text-muted); 
 }
-
-.review-card {
-    border: 1px solid #ddd;
-    border-radius: var(--radius-md);
-    padding: 16px;
-    margin-bottom: 16px;
+.rating-label { 
+    font-size: 12px; 
+    color: var(--color-text-muted); 
+    flex-basis: 100%; 
 }
-
-.review-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 12px;
+.rating-total { 
+    font-size: 12px; 
+    color: var(--color-text-light); 
+    margin-top: 4px; 
 }
-
-.review-user {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+.similar-item { 
+    font-size: 13px; 
+    padding: 6px 0; 
 }
-
-.review-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    object-fit: cover;
+.similar-title a { 
+    font-weight: 500; 
 }
-.review-avatar--placeholder {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #ccc;
-    display: inline-block;
+.similar-title a:hover { 
+    text-decoration: underline; 
 }
-
-.review-username {
-    font-size: 15px;
-    font-weight: 500;
+.similar-meta { 
+    font-size: 11px; 
+    color: var(--color-text-muted); 
+    margin-top: 2px; 
 }
-
-.review-scores {
-    text-align: right;
+.similar-year { 
+    font-size: 11px; 
+    color: var(--color-text-light); 
 }
-.review-total {
-    font-size: 22px;
-    font-weight: bold;
-    color: #333;
-}
-.review-subscores {
-    font-size: 11px;
-    color: var(--color-text-light);
-    letter-spacing: 3px;
-}
-
-.review-rev-title {
-    font-size: 16px;
-    font-weight: bold;
-    margin-bottom: 8px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    word-break: break-word;
-}
-
-.review-text {
-    font-size: 14px;
-    line-height: 1.6;
-    color: #333;
-    margin-bottom: 10px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    word-break: break-word;
-}
-
-.review-date {
-    font-size: 11px;
-    color: var(--color-text-light);
-    margin-bottom: 8px;
-}
-
-.review-like {
-    background: none;
-    border: 1px solid #ccc;
-    border-radius: var(--radius-pill);
-    padding: 3px 10px;
-    font-size: 13px;
-    cursor: pointer;
-}
-.review-like:hover { background: #f0f0f0; }
-
-
-/* ─── RIGHT SIDEBAR ──────────────────────────────────────── */
-.poem-sidebar {
-    padding-left: 24px;
-    position: sticky;
-    top: 20px;
-}
-
-.sidebar-auth {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 20px;
-}
-.sidebar-auth .auth-btn { width: 100%; text-align: center; }
-
-.sidebar-block {
-    margin-bottom: 24px;
-}
-
-.sidebar-block__title {
-    font-size: 11px;
-    font-weight: bold;
-    letter-spacing: 0.1em;
-    color: var(--color-accent);
-    margin-bottom: 10px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid var(--color-accent);
-}
-
-/* Метки */
-.tag-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
-    margin-bottom: 6px;
-}
-.tag-label { color: var(--color-text-muted); }
-.tag-badge {
-    background: #e8e8e8;
-    border-radius: var(--radius-pill);
-    padding: 2px 10px;
-    font-size: 12px;
-    color: #333;
-}
-
-/* Рейтинг */
-.rating-row {
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-    flex-wrap: wrap;
-    margin-bottom: 6px;
-}
-.rating-big {
-    font-size: 26px;
-    font-weight: bold;
-    color: var(--color-accent);
-}
-.rating-max {
-    font-size: 14px;
-    color: var(--color-text-muted);
-}
-.rating-label {
-    font-size: 12px;
-    color: var(--color-text-muted);
-    flex-basis: 100%;
-}
-.rating-total {
-    font-size: 12px;
-    color: var(--color-text-light);
-    margin-top: 4px;
-}
-
-/* Похожее */
-.similar-item {
-    font-size: 13px;
-    padding: 6px 0;
-}
-.similar-title a { font-weight: 500; }
-.similar-title a:hover { text-decoration: underline; }
-.similar-meta { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; }
-.similar-year { font-size: 11px; color: var(--color-text-light); }
-.sidebar-hr {
-    border: none;
-    height: 1px;
-    background: #ddd;
-}
-
-/* Like / Favourite active states */
-.poem-action--like.active,
-.poem-action--fav.active {
-    color: var(--color-accent);
-}
-
-/* ─── POEM PRE (correct line breaks) ────────────────────── */
-.poem-pre {
-    font-family: inherit;
-    font-size: 15px;
-    line-height: 1.9;
-    white-space: pre-wrap;
-    word-break: break-word;
-    margin: 0;
-    color: #222;
-}
-
-/* ─── EXISTING RATING BLOCK ──────────────────────────────── */
-.rate-existing {
-    border: 1px solid #ccc;
-    border-radius: var(--radius-md);
-    padding: 20px;
-}
-
-.rate-existing__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-}
-
-.rate-existing__label {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.rate-delete-btn {
-    background: none;
-    border: 1px solid #ccc;
-    border-radius: var(--radius-sm);
-    padding: 4px 12px;
-    font-size: 13px;
-    color: #888;
-    cursor: pointer;
-    transition: background var(--transition), color var(--transition);
-}
-.rate-delete-btn:hover {
-    background: #fee;
-    color: #c00;
-    border-color: #f99;
-}
-
-.rate-existing__scores {
-    display: flex;
-    align-items: flex-start;
-    gap: 24px;
-    margin-bottom: 16px;
-}
-
-.rate-existing__total {
-    font-size: 40px;
-    font-weight: bold;
-    color: var(--color-accent);
-    line-height: 1;
-    white-space: nowrap;
-}
-.rate-existing__total sup {
-    font-size: 16px;
-    font-weight: normal;
-    color: var(--color-text-muted);
-}
-
-.rate-existing__breakdown {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.breakdown-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    color: var(--color-text-muted);
-}
-.breakdown-row b {
-    color: #333;
-    font-weight: 600;
-    min-width: 24px;
-    text-align: right;
-}
-
-.rate-existing__review {
-    border-top: 1px solid #eee;
-    padding-top: 14px;
-    margin-top: 4px;
-}
-.rate-existing__rev-title {
-    font-size: 15px;
-    font-weight: bold;
-    margin-bottom: 8px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    word-break: break-word;
-}
-.rate-existing__rev-text {
-    font-size: 14px;
-    line-height: 1.6;
-    color: #333;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    word-break: break-word;
-}
-
-/* Review like active */
-.review-like.active {
-    color: var(--color-accent);
-    border-color: var(--color-accent);
+.sidebar-hr { 
+    border: none; 
+    height: 1px; 
+    background: #ddd; 
 }

@@ -1,7 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/config/db.php';
-require_once __DIR__ . '/config/auth.php';
+require_once __DIR__ . '/config/csrf.php';
 
 $conn = db_connect();
 
@@ -11,13 +11,11 @@ if ($id <= 0) {
     die('Стихотворение не найдено');
 }
 
-// Загружаем стихотворение
 $stmt = $conn->prepare("
     SELECT p.id, p.title, p.content, p.year, p.author,
            p.tag_type, p.tag_genre, p.tag_mood, p.tag_versification,
            p.tag_foot, p.tag_stanza, p.tag_rhyme
-    FROM poems p
-    WHERE p.id = ?
+    FROM poems p WHERE p.id = ?
 ");
 $stmt->bind_param("i", $id);
 $stmt->execute();
@@ -28,33 +26,25 @@ if (!$poem) {
     die('Стихотворение не найдено');
 }
 
-// Рейтинг
 $stmt = $conn->prepare("
     SELECT
-        ROUND(AVG(CASE WHEN has_review = 1 THEN total_score END), 0)   AS avg_with_review,
-        ROUND(AVG(CASE WHEN has_review = 0 THEN total_score END), 0)   AS avg_without_review,
+        ROUND(AVG(CASE WHEN has_review = 1 THEN total_score END), 0) AS avg_with_review,
+        ROUND(AVG(CASE WHEN has_review = 0 THEN total_score END), 0) AS avg_without_review,
         COUNT(*) AS total_count
-    FROM ratings
-    WHERE poem_id = ?
+    FROM ratings WHERE poem_id = ?
 ");
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $rating = $stmt->get_result()->fetch_assoc();
-
 $avg_with    = $rating['avg_with_review']    ?? 0;
 $avg_without = $rating['avg_without_review'] ?? 0;
 $total_count = $rating['total_count']        ?? 0;
 
-// Похожие
-$stmt = $conn->prepare("
-    SELECT id, title, author, year FROM poems
-    WHERE id != ? ORDER BY RAND() LIMIT 3
-");
+$stmt = $conn->prepare("SELECT id, title, author, year FROM poems WHERE id != ? ORDER BY RAND() LIMIT 3");
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $similar = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-// Количество лайков
 $conn->query("CREATE TABLE IF NOT EXISTS likes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -67,11 +57,14 @@ $stmt->bind_param("i", $id);
 $stmt->execute();
 $like_count = (int)$stmt->get_result()->fetch_assoc()['cnt'];
 
-// Состояние лайка и избранного для текущего пользователя
-$user_liked = false;
+$user_liked     = false;
 $user_favorited = false;
-if (!empty($_SESSION['logged_in'])) {
+$user_rating    = null;
+$logged_in      = !empty($_SESSION['logged_in']);
+
+if ($logged_in) {
     $uid = (int)$_SESSION['user_id'];
+
     $stmt = $conn->prepare("SELECT id FROM likes WHERE user_id = ? AND poem_id = ?");
     $stmt->bind_param("ii", $uid, $id);
     $stmt->execute();
@@ -81,19 +74,13 @@ if (!empty($_SESSION['logged_in'])) {
     $stmt->bind_param("ii", $uid, $id);
     $stmt->execute();
     $user_favorited = $stmt->get_result()->num_rows > 0;
-}
 
-// Существующая оценка/рецензия текущего пользователя
-$user_rating = null;
-if (!empty($_SESSION['logged_in'])) {
-    $uid2 = (int)$_SESSION['user_id'];
     $stmt = $conn->prepare("SELECT * FROM ratings WHERE poem_id = ? AND user_id = ?");
-    $stmt->bind_param("ii", $id, $uid2);
+    $stmt->bind_param("ii", $id, $uid);
     $stmt->execute();
     $user_rating = $stmt->get_result()->fetch_assoc();
 }
 
-// Таблица лайков рецензий
 $conn->query("CREATE TABLE IF NOT EXISTS review_likes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -102,8 +89,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS review_likes (
     UNIQUE KEY uq_rev_like (user_id, review_id)
 )");
 
-// Рецензии
-$sort = $_GET['sort'] ?? 'новые';
+$sort  = $_GET['sort'] ?? 'новые';
 $order = $sort === 'лучшие' ? 'total_score DESC' : 'created_at DESC';
 
 $stmt = $conn->prepare("
@@ -122,8 +108,7 @@ $stmt->bind_param("i", $id);
 $stmt->execute();
 $reviews = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-// Лайки рецензий
-$review_likes_map = [];
+$review_likes_map  = [];
 $user_review_likes = [];
 if (!empty($reviews)) {
     $review_ids = array_column($reviews, 'id');
@@ -131,18 +116,15 @@ if (!empty($reviews)) {
     $res = $conn->query("SELECT review_id, COUNT(*) AS cnt FROM review_likes WHERE review_id IN ({$in}) GROUP BY review_id");
     if ($res) while ($row = $res->fetch_assoc()) $review_likes_map[(int)$row['review_id']] = (int)$row['cnt'];
 
-    if (!empty($_SESSION['logged_in'])) {
+    if ($logged_in) {
         $uid3 = (int)$_SESSION['user_id'];
         $res = $conn->query("SELECT review_id FROM review_likes WHERE user_id = {$uid3} AND review_id IN ({$in})");
         if ($res) while ($row = $res->fetch_assoc()) $user_review_likes[(int)$row['review_id']] = true;
     }
 }
 
-$logged_in = !empty($_SESSION['logged_in']);
-$user_name = htmlspecialchars($_SESSION['user_name'] ?? '');
-
-// Обработка удаления своей оценки
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in && isset($_POST['delete_rating'])) {
+    csrf_check();
     $uid_del = (int)$_SESSION['user_id'];
     $stmt = $conn->prepare("DELETE FROM ratings WHERE poem_id = ? AND user_id = ?");
     $stmt->bind_param("ii", $id, $uid_del);
@@ -151,20 +133,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in && isset($_POST['delete_
     exit;
 }
 
-// Обработка отправки оценки
 $review_error = '';
-$review_ok = false;
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
-    $user_id     = (int)$_SESSION['user_id'];
-    $has_review  = isset($_POST['review_text']) && trim($_POST['review_text']) !== '';
-    $sc_rhyme    = min(18, max(0, (int)($_POST["score_rhyme"]         ?? 0)));
-    $sc_style    = min(18, max(0, (int)($_POST['score_style']         ?? 0)));
-    $sc_struct   = min(18, max(0, (int)($_POST['score_structure']     ?? 0)));
-    $sc_indiv    = min(18, max(0, (int)($_POST['score_individuality'] ?? 0)));
-    $sc_atmo     = min(18, max(0, (int)($_POST['score_atmosphere']    ?? 0)));
-    $total       = $sc_rhyme + $sc_style + $sc_struct + $sc_indiv + $sc_atmo;
-    $rev_title   = trim($_POST['review_title'] ?? '');
-    $rev_text    = trim($_POST['review_text']  ?? '');
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in && !isset($_POST['delete_rating'])) {
+    csrf_check();
+    $user_id    = (int)$_SESSION['user_id'];
+    $has_review = isset($_POST['review_text']) && trim($_POST['review_text']) !== '';
+    $sc_rhyme   = min(18, max(0, (int)($_POST['score_rhyme']         ?? 0)));
+    $sc_style   = min(18, max(0, (int)($_POST['score_style']         ?? 0)));
+    $sc_struct  = min(18, max(0, (int)($_POST['score_structure']     ?? 0)));
+    $sc_indiv   = min(18, max(0, (int)($_POST['score_individuality'] ?? 0)));
+    $sc_atmo    = min(18, max(0, (int)($_POST['score_atmosphere']    ?? 0)));
+    $total      = $sc_rhyme + $sc_style + $sc_struct + $sc_indiv + $sc_atmo;
+    $rev_title  = trim($_POST['review_title'] ?? '');
+    $rev_text   = trim($_POST['review_text']  ?? '');
 
     if ($has_review && mb_strlen($rev_text, 'UTF-8') < 300) {
         $review_error = 'Текст рецензии должен быть не менее 300 символов.';
@@ -189,7 +170,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
             $total, $rev_title, $rev_text
         );
         $stmt->execute();
-        $review_ok = true;
         header("Location: poem.php?id={$id}");
         exit;
     }
@@ -208,18 +188,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
     <my-header></my-header>
 
     <?php if (!$logged_in): ?>
-    <!-- auth-buttons содержит кнопки входа + модалку, работает на любой странице -->
     <auth-buttons></auth-buttons>
     <?php endif; ?>
 
     <main class="poem-page">
 
-        <!-- Левая часть: стихотворение -->
         <div class="poem-main">
-
             <h1 class="poem-title"><?= htmlspecialchars($poem['title']) ?></h1>
             <div class="poem-meta">
-                <a href="author.php" class="poem-author"><?= htmlspecialchars($poem['author']) ?></a>
+                <a href="author.php?name=<?= urlencode($poem['author']) ?>" class="poem-author"><?= htmlspecialchars($poem['author']) ?></a>
                 <span class="poem-dot">·</span>
                 <span class="poem-year"><?= htmlspecialchars((string)$poem['year']) ?> г.</span>
             </div>
@@ -228,20 +205,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                 <pre class="poem-pre"><?= htmlspecialchars($poem['content']) ?></pre>
             </div>
 
-            <!-- Действия под стихом -->
             <div class="poem-actions">
                 <button class="poem-action poem-action--like <?= $user_liked ? 'active' : '' ?>"
-                        id="btn-like"
-                        data-poem-id="<?= $id ?>"
-                        data-logged-in="<?= $logged_in ? '1' : '0' ?>"
-                        title="Нравится">
+                        id="btn-like" data-poem-id="<?= $id ?>"
+                        data-logged-in="<?= $logged_in ? '1' : '0' ?>">
                     <?= $user_liked ? '♥' : '♡' ?> <span id="like-count"><?= $like_count ?></span>
                 </button>
                 <button class="poem-action poem-action--fav <?= $user_favorited ? 'active' : '' ?>"
-                        id="btn-fav"
-                        data-poem-id="<?= $id ?>"
-                        data-logged-in="<?= $logged_in ? '1' : '0' ?>"
-                        title="В избранное">
+                        id="btn-fav" data-poem-id="<?= $id ?>"
+                        data-logged-in="<?= $logged_in ? '1' : '0' ?>">
                     <?= $user_favorited ? '★' : '☆' ?>
                 </button>
                 <div class="poem-share">
@@ -250,7 +222,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                 </div>
             </div>
 
-            <!-- Оценить работу -->
             <div class="rate-section">
                 <h2 class="rate-title">Оценить работу</h2>
 
@@ -268,8 +239,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                     <div class="rate-existing__header">
                         <span class="rate-existing__label">Ваша оценка</span>
                         <form method="POST" style="display:inline" onsubmit="return confirm('Удалить вашу оценку?')">
+                            <?= csrf_field() ?>
                             <input type="hidden" name="delete_rating" value="1">
-                            <button type="submit" class="rate-delete-btn" title="Удалить оценку">🗑 Удалить</button>
+                            <button type="submit" class="rate-delete-btn">🗑 Удалить</button>
                         </form>
                     </div>
                     <div class="rate-existing__scores">
@@ -298,6 +270,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                     <button class="rate-tab" data-tab="simple">Оценка без рецензии</button>
                 </div>
                 <form class="rate-form" method="POST">
+                    <?= csrf_field() ?>
                     <div class="rate-sliders">
                         <div class="slider-row">
                             <label>Рифмы / Образы</label>
@@ -339,13 +312,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
 
                     <div class="rate-submit-row">
                         <div class="total-score" id="total-score">45<sup>/90</sup></div>
-                        <button type="submit" class="rate-submit-btn" title="Отправить">✔</button>
+                        <button type="submit" class="rate-submit-btn">✔</button>
                     </div>
                 </form>
                 <?php endif; ?>
             </div>
 
-            <!-- Рецензии пользователей -->
             <div class="reviews-section">
                 <div class="reviews-header">
                     <h2 class="reviews-title">
@@ -389,12 +361,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                     <?php if ($rev['review_title']): ?>
                     <div class="review-rev-title"><?= htmlspecialchars($rev['review_title']) ?></div>
                     <?php endif; ?>
-                    <div class="review-text" style="white-space: pre-wrap; word-wrap: break-word;"><?= nl2br(htmlspecialchars($rev['review_text'])) ?></div>
+                    <div class="review-text"><?= nl2br(htmlspecialchars($rev['review_text'])) ?></div>
                     <div class="review-date"><?= date('d.m.Y', strtotime($rev['created_at'])) ?></div>
                     <?php
-                    $rev_id = (int)$rev['id'];
+                    $rev_id   = (int)$rev['id'];
                     $rev_liked = !empty($user_review_likes[$rev_id]);
-                    $rev_cnt = $review_likes_map[$rev_id] ?? 0;
+                    $rev_cnt   = $review_likes_map[$rev_id] ?? 0;
                     ?>
                     <button class="review-like <?= $rev_liked ? 'active' : '' ?>"
                             data-review-id="<?= $rev_id ?>"
@@ -404,13 +376,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                 </div>
                 <?php endforeach; ?>
             </div>
+        </div>
 
-        </div><!-- /poem-main -->
-
-        <!-- Правая панель -->
         <aside class="poem-sidebar">
-
-            <!-- Метки -->
             <div class="sidebar-block">
                 <div class="sidebar-block__title">МЕТКИ</div>
                 <?php
@@ -433,7 +401,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                 <?php endforeach; ?>
             </div>
 
-            <!-- Рейтинг -->
             <div class="sidebar-block">
                 <div class="sidebar-block__title">РЕЙТИНГ</div>
                 <div class="rating-row">
@@ -449,7 +416,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                 <div class="rating-total">Всего оценок: <?= $total_count ?></div>
             </div>
 
-            <!-- Похожее -->
             <div class="sidebar-block">
                 <div class="sidebar-block__title">ПОХОЖЕЕ</div>
                 <?php foreach ($similar as $i => $s): ?>
@@ -461,125 +427,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                 <?php if ($i < count($similar) - 1): ?><hr class="sidebar-hr"><?php endif; ?>
                 <?php endforeach; ?>
             </div>
-
         </aside>
+
     </main>
 
     <script src="public/js/header.js"></script>
     <script>
-    // Вспомогательная функция: открыть модалку входа
-    // Работает и когда есть auth-buttons на странице (незалогинен),
-    // и когда её нет — просто ничего не происходит (залогинен — не нужно)
     function requireLogin() {
-        if (typeof window.openAuthModal === 'function') {
-            window.openAuthModal('login');
-        }
+        if (typeof window.openAuthModal === 'function') window.openAuthModal('login');
     }
 
-    // Ссылка "Войдите" в блоке оценки
-    document.getElementById('login-to-rate')?.addEventListener('click', (e) => {
+    document.getElementById('login-to-rate')?.addEventListener('click', function(e) {
         e.preventDefault();
         requireLogin();
     });
 
-    // Слайдеры
-    const sliders = document.querySelectorAll('.slider');
+    var sliders = document.querySelectorAll('.slider');
     function updateTotal() {
-        let sum = 0;
-        sliders.forEach(s => { sum += parseInt(s.value); });
-        const maxTotal = sliders.length * 18;
-        document.getElementById('total-score').innerHTML = sum + '<sup>/' + maxTotal + '</sup>';
+        var sum = 0;
+        sliders.forEach(function(s) { sum += parseInt(s.value); });
+        document.getElementById('total-score').innerHTML = sum + '<sup>/90</sup>';
     }
-    sliders.forEach(s => {
-        const outId = s.dataset.out;
-        const out = document.getElementById(outId);
+    sliders.forEach(function(s) {
+        var out = document.getElementById(s.dataset.out);
         if (out) out.textContent = s.value;
-        s.addEventListener('input', () => {
+        s.addEventListener('input', function() {
             if (out) out.textContent = s.value;
             updateTotal();
         });
     });
     updateTotal();
 
-    // Счётчик символов
-    const textarea = document.getElementById('review-text-area');
-    const charCount = document.getElementById('char-count');
+    var textarea  = document.getElementById('review-text-area');
+    var charCount = document.getElementById('char-count');
     if (textarea) {
-        textarea.addEventListener('input', () => {
+        textarea.addEventListener('input', function() {
             charCount.textContent = textarea.value.length;
         });
     }
 
-    // Очистить черновик
-    document.getElementById('clear-draft')?.addEventListener('click', () => {
+    document.getElementById('clear-draft')?.addEventListener('click', function() {
         if (textarea) { textarea.value = ''; charCount.textContent = 0; }
-        document.querySelector('input[name="review_title"]').value = '';
+        var titleInput = document.querySelector('input[name="review_title"]');
+        if (titleInput) titleInput.value = '';
     });
 
-    // Вкладки рецензия / без рецензии
-    document.querySelectorAll('.rate-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.rate-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.rate-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.rate-tab').forEach(function(t) { t.classList.remove('active'); });
             tab.classList.add('active');
-            const isReview = tab.dataset.tab === 'review';
+            var isReview = tab.dataset.tab === 'review';
             document.getElementById('review-fields').style.display = isReview ? 'block' : 'none';
         });
     });
 
-    // ─── ЛАЙК ────────────────────────────────────────────────
     document.getElementById('btn-like')?.addEventListener('click', async function() {
-        if (this.dataset.loggedIn !== '1') {
-            requireLogin();
-            return;
-        }
-        const poemId = this.dataset.poemId;
-        try {
-            const fd = new FormData();
-            fd.append('poem_id', poemId);
-            const res = await fetch('public/api/toggle_like.php', { method: 'POST', body: fd });
-            const data = await res.json();
-            const liked = data.action === 'added';
-            this.innerHTML = (liked ? '♥' : '♡') + ' <span id="like-count">' + data.count + '</span>';
-            this.classList.toggle('active', liked);
-        } catch(e) { console.error('like error', e); }
+        if (this.dataset.loggedIn !== '1') { requireLogin(); return; }
+        var fd = new FormData();
+        fd.append('poem_id', this.dataset.poemId);
+        fd.append('csrf_token', '<?= csrf_token() ?>');
+        var res  = await fetch('public/api/toggle_like.php', { method: 'POST', body: fd });
+        var data = await res.json();
+        var liked = data.action === 'added';
+        this.innerHTML = (liked ? '♥' : '♡') + ' <span id="like-count">' + data.count + '</span>';
+        this.classList.toggle('active', liked);
     });
 
-    // ─── ИЗБРАННОЕ ───────────────────────────────────────────
     document.getElementById('btn-fav')?.addEventListener('click', async function() {
-        if (this.dataset.loggedIn !== '1') {
-            requireLogin();
-            return;
-        }
-        const poemId = this.dataset.poemId;
-        try {
-            const fd = new FormData();
-            fd.append('poem_id', poemId);
-            const res = await fetch('public/api/toggle_favorite.php', { method: 'POST', body: fd });
-            const data = await res.json();
-            if (data.error) { console.error('fav error', data.error); return; }
-            const faved = data.action === 'added';
-            this.textContent = faved ? '★' : '☆';
-            this.classList.toggle('active', faved);
-        } catch(e) { console.error('fav error', e); }
+        if (this.dataset.loggedIn !== '1') { requireLogin(); return; }
+        var fd = new FormData();
+        fd.append('poem_id', this.dataset.poemId);
+        fd.append('csrf_token', '<?= csrf_token() ?>');
+        var res  = await fetch('public/api/toggle_favorite.php', { method: 'POST', body: fd });
+        var data = await res.json();
+        if (data.error) return;
+        var faved = data.action === 'added';
+        this.textContent = faved ? '★' : '☆';
+        this.classList.toggle('active', faved);
     });
 
-    // ─── ЛАЙКИ РЕЦЕНЗИЙ ──────────────────────────────────────
-    document.querySelectorAll('.review-like').forEach(btn => {
+    document.querySelectorAll('.review-like').forEach(function(btn) {
         btn.addEventListener('click', async function() {
-            if (this.dataset.loggedIn !== '1') {
-                requireLogin();
-                return;
-            }
-            const reviewId = this.dataset.reviewId;
-            try {
-                const fd = new FormData();
-                fd.append('review_id', reviewId);
-                const res = await fetch('public/api/toggle_review_like.php', { method: 'POST', body: fd });
-                const data = await res.json();
-                const liked = data.action === 'added';
-                this.innerHTML = (liked ? '♥' : '♡') + ' <span>' + data.count + '</span>';
-                this.classList.toggle('active', liked);
-            } catch(e) { console.error('review like error', e); }
+            if (this.dataset.loggedIn !== '1') { requireLogin(); return; }
+            var fd = new FormData();
+            fd.append('review_id', this.dataset.reviewId);
+            fd.append('csrf_token', '<?= csrf_token() ?>');
+            var res  = await fetch('public/api/toggle_review_like.php', { method: 'POST', body: fd });
+            var data = await res.json();
+            var liked = data.action === 'added';
+            this.innerHTML = (liked ? '♥' : '♡') + ' <span>' + data.count + '</span>';
+            this.classList.toggle('active', liked);
         });
     });
     </script>

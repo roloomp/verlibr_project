@@ -1,19 +1,17 @@
 <?php
 session_start();
 require_once __DIR__ . '/config/db.php';
-require_once __DIR__ . '/config/auth.php';
 
 $conn = db_connect();
+$logged_in = !empty($_SESSION['logged_in']);
 
 $page     = max(1, (int)($_GET['page'] ?? 1));
-$per_page = 24; // 3 колонки * 8 строк
+$per_page = 24;
 $offset   = ($page - 1) * $per_page;
 
-// Считаем общее количество стихов для пагинации
-$total = (int)$conn->query("SELECT COUNT(*) as cnt FROM poems")->fetch_assoc()['cnt'];
-$total_pages = max(1, ceil($total / $per_page));
+$total       = (int)$conn->query("SELECT COUNT(*) FROM poems")->fetch_row()[0];
+$total_pages = max(1, (int)ceil($total / $per_page));
 
-// Достаём стихи + их рейтинги. Сортируем по количеству оценок (популярность), потом по ID
 $sql = "
     SELECT p.id, p.title, p.author, p.year,
            COUNT(r.id) AS rating_count,
@@ -38,11 +36,16 @@ $poems = $conn->query($sql)->fetch_all(MYSQLI_ASSOC);
 </head>
 <body>
     <my-header></my-header>
+
+    <?php if (!$logged_in): ?>
+    <auth-buttons></auth-buttons>
+    <?php endif; ?>
+
     <main class="popular-page">
         <h1 class="popular-title">Популярное</h1>
-        
+
         <div class="popular-grid">
-            <?php foreach ($poems as $i => $p): 
+            <?php foreach ($poems as $i => $p):
                 $num = ($page - 1) * $per_page + $i + 1;
             ?>
             <a href="poem.php?id=<?= $p['id'] ?>" class="popular-item">
@@ -62,18 +65,15 @@ $poems = $conn->query($sql)->fetch_all(MYSQLI_ASSOC);
 
         <?php if ($total_pages > 1): ?>
         <nav class="pagination">
-            <?php if ($page > 1): ?>
-                <a href="?page=<?= $page - 1 ?>">‹</a>
-            <?php endif; ?>
+            <?php if ($page > 1): ?><a href="?page=<?= $page - 1 ?>">‹</a><?php endif; ?>
             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                 <a href="?page=<?= $i ?>" class="<?= $i === $page ? 'active' : '' ?>"><?= $i ?></a>
             <?php endfor; ?>
-            <?php if ($page < $total_pages): ?>
-                <a href="?page=<?= $page + 1 ?>">›</a>
-            <?php endif; ?>
+            <?php if ($page < $total_pages): ?><a href="?page=<?= $page + 1 ?>">›</a><?php endif; ?>
         </nav>
         <?php endif; ?>
     </main>
+
     <script src="public/js/header.js"></script>
 </body>
 </html>

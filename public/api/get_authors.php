@@ -1,13 +1,11 @@
 <?php
-declare(strict_types=1);
+session_start();
 require_once __DIR__ . '/../../config/db.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
 $conn = db_connect();
 
-// Предполагаем поля: birth_year, death_year, avatar в таблице authors
-// dates формируем как "1969 - н.д." или "1799 - 1837"
 $stmt = $conn->prepare("
     SELECT
         a.id,

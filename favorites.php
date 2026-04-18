@@ -1,14 +1,13 @@
 <?php
 session_start();
 require_once __DIR__ . '/config/db.php';
-require_once __DIR__ . '/config/auth.php';
 
 $logged_in = !empty($_SESSION['logged_in']);
 
-$poems = [];
+$poems       = [];
 $total_pages = 1;
-$page = 1;
-$sort = 'новые';
+$page        = 1;
+$sort        = 'новые';
 
 if ($logged_in) {
     $conn    = db_connect();
@@ -30,7 +29,7 @@ if ($logged_in) {
     $stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM favorites f WHERE f.user_id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
-    $total = (int)$stmt->get_result()->fetch_assoc()['cnt'];
+    $total       = (int)$stmt->get_result()->fetch_assoc()['cnt'];
     $total_pages = max(1, (int)ceil($total / $per_page));
 
     $stmt = $conn->prepare("
@@ -65,64 +64,14 @@ if ($logged_in) {
     <my-header></my-header>
 
     <?php if (!$logged_in): ?>
-
-    <!-- Модалка без кнопок сверху -->
-    <div class="overlay" id="overlay">
-        <div class="modal" role="dialog" aria-modal="true">
-            <button class="modal__close" id="btn-close" aria-label="Закрыть">✕</button>
-
-            <form class="form-panel" id="panel-login" method="POST" action="index.php">
-                <input type="hidden" name="action" value="login">
-                <div class="form__title">Вход</div>
-                <div class="form__subtitle">Введите свои данные для входа в аккаунт</div>
-
-                <label class="form__label">Email <span class="required">*</span></label>
-                <input class="form__input" type="email" placeholder="Ваш email" name="login_email" required>
-
-                <div class="form__label">
-                    Пароль <span class="required">*</span>
-                    <button type="button" class="form__link-btn">Забыли пароль?</button>
-                </div>
-                <input class="form__input" type="password" placeholder="Ваш пароль" name="login_password" required>
-
-                <button class="form__btn form__btn--primary" type="submit">Войти</button>
-                <button class="form__btn form__btn--secondary" id="btn-go-register" type="button">Зарегистрироваться</button>
-            </form>
-
-            <form class="form-panel" id="panel-register" method="POST" action="index.php">
-                <input type="hidden" name="action" value="register">
-                <div class="form__title">Создать аккаунт</div>
-
-                <label class="form__label">Email <span class="required">*</span></label>
-                <div class="form__hint">Будет также логином для авторизации</div>
-                <input class="form__input" type="email" placeholder="mail@example.com" name="register_email" required>
-
-                <label class="form__label">Отображаемое имя <span class="required">*</span></label>
-                <div class="form__hint">Ваш никнейм</div>
-                <input class="form__input" type="text" name="register_nickname" required>
-
-                <label class="form__label">Пароль <span class="required">*</span></label>
-                <input class="form__input" type="password" name="register_password" required>
-
-                <label class="form__label">Подтвердите пароль <span class="required">*</span></label>
-                <input class="form__input" type="password" name="register_verify_password" required>
-
-                <button class="form__btn form__btn--primary" type="submit">Создать аккаунт</button>
-                <p class="form__footer">
-                    Уже есть аккаунт?
-                    <button class="form__footer-btn" id="btn-go-login" type="button">Войти</button>
-                </p>
-            </form>
-        </div>
-    </div>
-
+    <auth-buttons></auth-buttons>
     <main>
         <div class="fav-page">
             <div class="fav-header">
                 <h1 class="fav-title">Избранное</h1>
             </div>
             <div class="fav-empty">
-                <p style="margin-bottom: 16px;">Войдите в аккаунт, чтобы увидеть избранное</p>
+                <p style="margin-bottom:16px">Войдите в аккаунт, чтобы увидеть избранное</p>
                 <div style="display:flex; gap:12px; justify-content:center">
                     <button class="auth-btn auth-btn--login" onclick="window.openAuthModal('login')">Войти</button>
                     <button class="auth-btn auth-btn--register" onclick="window.openAuthModal('register')">Регистрация</button>
@@ -131,38 +80,12 @@ if ($logged_in) {
         </div>
     </main>
 
-    <script>
-    (function() {
-        const overlay = document.getElementById('overlay');
-        const modal   = overlay.querySelector('.modal');
-        const panels  = overlay.querySelectorAll('.form-panel');
-
-        window.openAuthModal = function(tab) {
-            panels.forEach(p => p.classList.remove('active'));
-            overlay.querySelector('#panel-' + (tab || 'login')).classList.add('active');
-            overlay.classList.add('open');
-        };
-
-        document.getElementById('btn-close').addEventListener('click', () => overlay.classList.remove('open'));
-        document.getElementById('btn-go-register').addEventListener('click', () => window.openAuthModal('register'));
-        document.getElementById('btn-go-login').addEventListener('click', () => window.openAuthModal('login'));
-
-        overlay.addEventListener('click', (e) => {
-            if (!modal.contains(e.target)) overlay.classList.remove('open');
-        });
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') overlay.classList.remove('open');
-        });
-    })();
-    </script>
-
     <?php else: ?>
-
     <main class="fav-page">
         <div class="fav-header">
             <h1 class="fav-title">Избранное</h1>
             <select class="fav-sort" onchange="
-                const url = new URL(window.location);
+                var url = new URL(window.location);
                 url.searchParams.set('sort', this.value);
                 url.searchParams.set('page', 1);
                 window.location = url;
@@ -197,35 +120,24 @@ if ($logged_in) {
 
         <?php if ($total_pages > 1): ?>
         <nav class="pagination">
-            <?php if ($page > 1): ?>
-                <a href="?sort=<?= urlencode($sort) ?>&page=<?= $page - 1 ?>">‹</a>
-            <?php endif; ?>
+            <?php if ($page > 1): ?><a href="?sort=<?= urlencode($sort) ?>&page=<?= $page - 1 ?>">‹</a><?php endif; ?>
             <?php
+            $prev = null;
             $pages_to_show = [];
             for ($i = 1; $i <= $total_pages; $i++) {
-                if ($i === 1 || $i === $total_pages || abs($i - $page) <= 2) {
-                    $pages_to_show[] = $i;
-                }
+                if ($i === 1 || $i === $total_pages || abs($i - $page) <= 2) $pages_to_show[] = $i;
             }
-            $prev = null;
             foreach ($pages_to_show as $p):
-                if ($prev !== null && $p - $prev > 1): ?>
-                    <span>...</span>
-                <?php endif; ?>
+                if ($prev !== null && $p - $prev > 1): ?><span>...</span><?php endif; ?>
                 <a href="?sort=<?= urlencode($sort) ?>&page=<?= $p ?>"
                    class="<?= $p === $page ? 'active' : '' ?>"><?= $p ?></a>
-            <?php
-                $prev = $p;
-            endforeach; ?>
-            <?php if ($page < $total_pages): ?>
-                <a href="?sort=<?= urlencode($sort) ?>&page=<?= $page + 1 ?>">›</a>
-            <?php endif; ?>
+            <?php $prev = $p; endforeach; ?>
+            <?php if ($page < $total_pages): ?><a href="?sort=<?= urlencode($sort) ?>&page=<?= $page + 1 ?>">›</a><?php endif; ?>
         </nav>
         <?php endif; ?>
 
         <?php endif; ?>
     </main>
-
     <?php endif; ?>
 
     <script src="public/js/header.js"></script>
