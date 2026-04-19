@@ -3,6 +3,36 @@ session_start();
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/config/auth.php';
 
+// --- обработка входа/регистрации ---
+$auth_error = '';
+$action = $_POST['action'] ?? '';
+
+if ($action === 'login') {
+    $result = handle_login(
+        db_connect(),
+        trim($_POST['login_email'] ?? ''),
+        $_POST['login_password'] ?? ''
+    );
+    if ($result['ok']) {
+        header('Location: favorites.php');
+        exit;
+    }
+    $auth_error = $result['error'];
+} elseif ($action === 'register') {
+    $result = handle_register(
+        db_connect(),
+        trim($_POST['register_email'] ?? ''),
+        trim($_POST['register_nickname'] ?? ''),
+        $_POST['register_password'] ?? '',
+        $_POST['register_verify_password'] ?? ''
+    );
+    if ($result['ok']) {
+        header('Location: favorites.php');
+        exit;
+    }
+    $auth_error = $result['error'];
+}
+
 $logged_in = !empty($_SESSION['logged_in']);
 
 $poems = [];
@@ -23,9 +53,6 @@ if ($logged_in) {
         'лучшие' => 'avg_score DESC',
         'старые' => 'f.created_at ASC',
     ];
-
-    // БАГ ИСПРАВЛЕН: $sort из GET без проверки шёл в ORDER BY — SQL-инъекция.
-    // Теперь используем whitelist + значение по умолчанию.
     $sort = $_GET['sort'] ?? 'новые';
     if (!isset($sort_map[$sort])) $sort = 'новые';
     $order = $sort_map[$sort];
@@ -73,34 +100,50 @@ if ($logged_in) {
         <div class="modal" role="dialog" aria-modal="true">
             <button class="modal__close" id="btn-close" aria-label="Закрыть">✕</button>
 
-            <form class="form-panel" id="panel-login" method="POST" action="index.php">
+            <form class="form-panel" id="panel-login" method="POST" action="">
                 <input type="hidden" name="action" value="login">
                 <div class="form__title">Вход</div>
                 <div class="form__subtitle">Введите свои данные для входа в аккаунт</div>
+
                 <label class="form__label">Email <span class="required">*</span></label>
                 <input class="form__input" type="email" placeholder="Ваш email" name="login_email" required>
+
                 <div class="form__label">
                     Пароль <span class="required">*</span>
                     <button type="button" class="form__link-btn">Забыли пароль?</button>
                 </div>
                 <input class="form__input" type="password" placeholder="Ваш пароль" name="login_password" required>
+
+                <?php if ($auth_error && $action === 'login'): ?>
+                    <div class="error-message"><?= htmlspecialchars($auth_error) ?></div>
+                <?php endif; ?>
+
                 <button class="form__btn form__btn--primary" type="submit">Войти</button>
                 <button class="form__btn form__btn--secondary" id="btn-go-register" type="button">Зарегистрироваться</button>
             </form>
 
-            <form class="form-panel" id="panel-register" method="POST" action="index.php">
+            <form class="form-panel" id="panel-register" method="POST" action="">
                 <input type="hidden" name="action" value="register">
                 <div class="form__title">Создать аккаунт</div>
+
                 <label class="form__label">Email <span class="required">*</span></label>
                 <div class="form__hint">Будет также логином для авторизации</div>
                 <input class="form__input" type="email" placeholder="mail@example.com" name="register_email" required>
+
                 <label class="form__label">Отображаемое имя <span class="required">*</span></label>
                 <div class="form__hint">Ваш никнейм</div>
                 <input class="form__input" type="text" name="register_nickname" required>
+
                 <label class="form__label">Пароль <span class="required">*</span></label>
                 <input class="form__input" type="password" name="register_password" required>
+
                 <label class="form__label">Подтвердите пароль <span class="required">*</span></label>
                 <input class="form__input" type="password" name="register_verify_password" required>
+
+                <?php if ($auth_error && $action === 'register'): ?>
+                    <div class="error-message"><?= htmlspecialchars($auth_error) ?></div>
+                <?php endif; ?>
+
                 <button class="form__btn form__btn--primary" type="submit">Создать аккаунт</button>
                 <p class="form__footer">
                     Уже есть аккаунт?
@@ -147,6 +190,10 @@ if ($logged_in) {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') overlay.classList.remove('open');
         });
+
+        <?php if ($auth_error): ?>
+        window.openAuthModal('<?= $action === 'register' ? 'register' : 'login' ?>');
+        <?php endif; ?>
     })();
     </script>
 
@@ -176,11 +223,10 @@ if ($logged_in) {
             <div class="fav-item">
                 <div class="fav-item__info">
                     <div class="fav-item__title">
-                        <a href="poem.php?id=<?= (int)$poem['id'] ?>"><?= htmlspecialchars($poem['title']) ?></a>
+                        <a href="poem.php?id=<?= $poem['id'] ?>"><?= htmlspecialchars($poem['title']) ?></a>
                     </div>
                     <div class="fav-item__author"><?= htmlspecialchars($poem['author']) ?></div>
-                    <!-- БАГ ИСПРАВЛЕН: year выводился без (int) — потенциально null без экранирования -->
-                    <div class="fav-item__year"><?= (int)$poem['year'] ?: '' ?></div>
+                    <div class="fav-item__year"><?= htmlspecialchars((string)$poem['year']) ?></div>
                 </div>
                 <div class="fav-item__scores">
                     <span class="fav-score" title="С рецензией"><?= $poem['avg_with'] ?? '—' ?></span>

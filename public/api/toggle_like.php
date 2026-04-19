@@ -22,10 +22,6 @@ if ($poem_id <= 0) {
 
 $conn = db_connect();
 
-// БАГ ИСПРАВЛЕН: в оригинале CREATE TABLE IF NOT EXISTS выполнялся при КАЖДОМ
-// запросе лайка — лишний запрос к БД при каждом клике. Таблица уже создана в
-// migrations.sql, этот код просто не нужен. Удалён.
-
 $stmt = $conn->prepare("SELECT id FROM likes WHERE user_id = ? AND poem_id = ?");
 $stmt->bind_param("ii", $user_id, $poem_id);
 $stmt->execute();

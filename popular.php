@@ -21,9 +21,12 @@ $sql = "
     LEFT JOIN ratings r ON r.poem_id = p.id
     GROUP BY p.id
     ORDER BY rating_count DESC, p.id DESC
-    LIMIT $per_page OFFSET $offset
+    LIMIT ? OFFSET ?
 ";
-$poems = $conn->query($sql)->fetch_all(MYSQLI_ASSOC);
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("ii", $per_page, $offset);
+$stmt->execute();
+$poems = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="ru">

@@ -3,15 +3,41 @@ session_start();
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/config/auth.php';
 
+// --- обработка входа/регистрации ---
+$auth_error = '';
+$action = $_POST['action'] ?? '';
+
+if ($action === 'login') {
+    $result = handle_login(
+        db_connect(),
+        trim($_POST['login_email'] ?? ''),
+        $_POST['login_password'] ?? ''
+    );
+    if ($result['ok']) {
+        header('Location: profile.php');
+        exit;
+    }
+    $auth_error = $result['error'];
+} elseif ($action === 'register') {
+    $result = handle_register(
+        db_connect(),
+        trim($_POST['register_email'] ?? ''),
+        trim($_POST['register_nickname'] ?? ''),
+        $_POST['register_password'] ?? '',
+        $_POST['register_verify_password'] ?? ''
+    );
+    if ($result['ok']) {
+        header('Location: profile.php');
+        exit;
+    }
+    $auth_error = $result['error'];
+}
+
 $logged_in = !empty($_SESSION['logged_in']);
 
 // Обработка выхода
 if ($logged_in && isset($_POST['logout'])) {
     session_destroy();
-    if (ini_get("session.use_cookies")) {
-        $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000, $params["path"], $params["domain"], $params["secure"], $params["httponly"]);
-    }
     header('Location: /');
     exit;
 }
@@ -27,68 +53,30 @@ if ($logged_in) {
 
     // --- Загрузка аватара ---
     if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-        // БАГ ИСПРАВЛЕН: проверяли только расширение — его легко подделать (shell.php -> shell.jpg).
-        // Теперь проверяем реальный MIME через finfo, а не полагаемся на $_FILES['type'].
-        $finfo    = new finfo(FILEINFO_MIME_TYPE);
-        $mime     = $finfo->file($_FILES['avatar']['tmp_name']);
-        $allowed_mime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-
-        // БАГ ИСПРАВЛЕН: ограничиваем размер файла (было без ограничений — DoS через диск)
-        $max_size = 5 * 1024 * 1024; // 5 MB
-
-        if (in_array($mime, $allowed_mime, true) && $_FILES['avatar']['size'] <= $max_size) {
-            $ext_map  = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
-            $ext      = $ext_map[$mime];
-            $dir      = __DIR__ . '/public/uploads/avatars/';
+        $ext      = strtolower(pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION));
+        $allowed  = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        if (in_array($ext, $allowed, true)) {
+            $dir  = __DIR__ . '/public/uploads/avatars/';
             if (!is_dir($dir)) mkdir($dir, 0755, true);
-
-            // БАГ ИСПРАВЛЕН: имя файла содержало time() — коллизии маловероятны,
-            // но лучше использовать случайный hex, чтобы файлы нельзя было предугадать
-            $fname = 'avatar_' . $user_id . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
-
+            $fname = 'avatar_' . $user_id . '_' . time() . '.' . $ext;
             if (move_uploaded_file($_FILES['avatar']['tmp_name'], $dir . $fname)) {
-                // БАГ ИСПРАВЛЕН: старый аватар не удалялся — диск засорялся
-                $old = $conn->prepare("SELECT avatar FROM profile WHERE id = ?");
-                $old->bind_param("i", $user_id);
-                $old->execute();
-                $old_row = $old->get_result()->fetch_assoc();
-                if (!empty($old_row['avatar']) && file_exists(__DIR__ . '/' . $old_row['avatar'])) {
-                    unlink(__DIR__ . '/' . $old_row['avatar']);
-                }
-
                 $path = 'public/uploads/avatars/' . $fname;
                 $stmt = $conn->prepare("UPDATE profile SET avatar = ? WHERE id = ?");
                 $stmt->bind_param("si", $path, $user_id);
                 $stmt->execute();
             }
         }
-        // БАГ ИСПРАВЛЕН: раньше при неверном типе/размере молча ничего не происходило.
-        // Теперь хотя бы можно добавить flash-сообщение (здесь оставлено заглушкой).
     }
 
     // --- Загрузка баннера ---
     if (isset($_FILES['banner']) && $_FILES['banner']['error'] === UPLOAD_ERR_OK) {
-        $finfo    = new finfo(FILEINFO_MIME_TYPE);
-        $mime     = $finfo->file($_FILES['banner']['tmp_name']);
-        $allowed_mime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        $max_size = 10 * 1024 * 1024; // 10 MB для баннера
-
-        if (in_array($mime, $allowed_mime, true) && $_FILES['banner']['size'] <= $max_size) {
-            $ext_map  = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
-            $ext      = $ext_map[$mime];
-            $dir      = __DIR__ . '/public/uploads/banners/';
+        $ext      = strtolower(pathinfo($_FILES['banner']['name'], PATHINFO_EXTENSION));
+        $allowed  = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        if (in_array($ext, $allowed, true)) {
+            $dir  = __DIR__ . '/public/uploads/banners/';
             if (!is_dir($dir)) mkdir($dir, 0755, true);
-            $fname = 'banner_' . $user_id . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
-
+            $fname = 'banner_' . $user_id . '_' . time() . '.' . $ext;
             if (move_uploaded_file($_FILES['banner']['tmp_name'], $dir . $fname)) {
-                $old = $conn->prepare("SELECT banner FROM profile WHERE id = ?");
-                $old->bind_param("i", $user_id);
-                $old->execute();
-                $old_row = $old->get_result()->fetch_assoc();
-                if (!empty($old_row['banner']) && file_exists(__DIR__ . '/' . $old_row['banner'])) {
-                    unlink(__DIR__ . '/' . $old_row['banner']);
-                }
-
                 $path = 'public/uploads/banners/' . $fname;
                 $stmt = $conn->prepare("UPDATE profile SET banner = ? WHERE id = ?");
                 $stmt->bind_param("si", $path, $user_id);
@@ -169,13 +157,6 @@ if ($logged_in) {
 
 $active_tab    = $_GET['tab']    ?? 'ratings';
 $active_subtab = $_GET['subtab'] ?? 'reviews';
-
-// БАГ ИСПРАВЛЕН: валидация значений вкладок — без этого в GET можно было передать
-// произвольную строку, которая уходила бы в href атрибуты HTML без экранирования
-$allowed_tabs    = ['ratings', 'stats', 'liked'];
-$allowed_subtabs = ['reviews', 'scores'];
-if (!in_array($active_tab, $allowed_tabs, true))       $active_tab    = 'ratings';
-if (!in_array($active_subtab, $allowed_subtabs, true)) $active_subtab = 'reviews';
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -193,7 +174,8 @@ if (!in_array($active_subtab, $allowed_subtabs, true)) $active_subtab = 'reviews
         <div class="overlay" id="overlay">
             <div class="modal" role="dialog" aria-modal="true">
                 <button class="modal__close" id="btn-close" aria-label="Закрыть">✕</button>
-                <form class="form-panel" id="panel-login" method="POST" action="index.php">
+
+                <form class="form-panel" id="panel-login" method="POST" action="">
                     <input type="hidden" name="action" value="login">
                     <div class="form__title">Вход</div>
                     <div class="form__subtitle">Введите свои данные для входа в аккаунт</div>
@@ -204,10 +186,16 @@ if (!in_array($active_subtab, $allowed_subtabs, true)) $active_subtab = 'reviews
                         <button type="button" class="form__link-btn">Забыли пароль?</button>
                     </div>
                     <input class="form__input" type="password" placeholder="Ваш пароль" name="login_password" required>
+
+                    <?php if ($auth_error && $action === 'login'): ?>
+                        <div class="error-message"><?= htmlspecialchars($auth_error) ?></div>
+                    <?php endif; ?>
+
                     <button class="form__btn form__btn--primary" type="submit">Войти</button>
                     <button class="form__btn form__btn--secondary" id="btn-go-register" type="button">Зарегистрироваться</button>
                 </form>
-                <form class="form-panel" id="panel-register" method="POST" action="index.php">
+
+                <form class="form-panel" id="panel-register" method="POST" action="">
                     <input type="hidden" name="action" value="register">
                     <div class="form__title">Создать аккаунт</div>
                     <label class="form__label">Email <span class="required">*</span></label>
@@ -220,6 +208,11 @@ if (!in_array($active_subtab, $allowed_subtabs, true)) $active_subtab = 'reviews
                     <input class="form__input" type="password" name="register_password" required>
                     <label class="form__label">Подтвердите пароль <span class="required">*</span></label>
                     <input class="form__input" type="password" name="register_verify_password" required>
+
+                    <?php if ($auth_error && $action === 'register'): ?>
+                        <div class="error-message"><?= htmlspecialchars($auth_error) ?></div>
+                    <?php endif; ?>
+
                     <button class="form__btn form__btn--primary" type="submit">Создать аккаунт</button>
                     <p class="form__footer">
                         Уже есть аккаунт?
@@ -228,6 +221,7 @@ if (!in_array($active_subtab, $allowed_subtabs, true)) $active_subtab = 'reviews
                 </form>
             </div>
         </div>
+
         <main>
             <div class="profile-guest">
                 <div class="profile-guest__icon">👤</div>
@@ -239,23 +233,32 @@ if (!in_array($active_subtab, $allowed_subtabs, true)) $active_subtab = 'reviews
                 </div>
             </div>
         </main>
+
         <script>
             (function() {
                 const overlay = document.getElementById('overlay');
                 const modal   = overlay.querySelector('.modal');
                 const panels  = overlay.querySelectorAll('.form-panel');
+
                 window.openAuthModal = function(tab) {
                     panels.forEach(p => p.classList.remove('active'));
                     overlay.querySelector('#panel-' + (tab || 'login')).classList.add('active');
                     overlay.classList.add('open');
                 };
+
                 document.getElementById('btn-close')?.addEventListener('click', () => overlay.classList.remove('open'));
                 document.getElementById('btn-go-register')?.addEventListener('click', () => window.openAuthModal('register'));
                 document.getElementById('btn-go-login')?.addEventListener('click', () => window.openAuthModal('login'));
+
                 overlay.addEventListener('click', (e) => { if (!modal.contains(e.target)) overlay.classList.remove('open'); });
                 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') overlay.classList.remove('open'); });
+
+                <?php if ($auth_error): ?>
+                window.openAuthModal('<?= $action === 'register' ? 'register' : 'login' ?>');
+                <?php endif; ?>
             })();
         </script>
+
     <?php else: ?>
         <main class="profile-page">
             <div class="profile-top">
@@ -280,7 +283,7 @@ if (!in_array($active_subtab, $allowed_subtabs, true)) $active_subtab = 'reviews
 
                     <div class="profile-card__bio" id="bio-display">
                         <?php if (!empty($user['bio'])): ?>
-                            <span class="bio-text-content"><?= nl2br(htmlspecialchars($user['bio'])) ?></span>
+                            <span style="white-space: pre-wrap; word-wrap: break-word;"><?= nl2br(htmlspecialchars($user['bio'])) ?></span>
                         <?php else: ?>
                             <span class="profile-card__bio--placeholder">Биография так называемая</span>
                         <?php endif; ?>
@@ -332,7 +335,7 @@ if (!in_array($active_subtab, $allowed_subtabs, true)) $active_subtab = 'reviews
                     <?php else: ?>
                         <div class="ratings-grid">
                             <?php foreach ($reviews_only as $r): ?>
-                                <a href="poem.php?id=<?= (int)$r['poem_id'] ?>" class="rating-item">
+                                <a href="poem.php?id=<?= $r['poem_id'] ?>" class="rating-item">
                                     <div class="rating-item__info">
                                         <div class="rating-item__title"><?= htmlspecialchars($r['title']) ?></div>
                                         <div class="rating-item__author"><?= htmlspecialchars($r['author']) ?></div>
@@ -352,7 +355,7 @@ if (!in_array($active_subtab, $allowed_subtabs, true)) $active_subtab = 'reviews
                     <?php else: ?>
                         <div class="ratings-grid">
                             <?php foreach ($scores_only as $r): ?>
-                                <a href="poem.php?id=<?= (int)$r['poem_id'] ?>" class="rating-item">
+                                <a href="poem.php?id=<?= $r['poem_id'] ?>" class="rating-item">
                                     <div class="rating-item__info">
                                         <div class="rating-item__title"><?= htmlspecialchars($r['title']) ?></div>
                                         <div class="rating-item__author"><?= htmlspecialchars($r['author']) ?></div>
@@ -382,9 +385,7 @@ if (!in_array($active_subtab, $allowed_subtabs, true)) $active_subtab = 'reviews
                         <?php foreach ($liked_reviews as $rev): ?>
                             <div class="liked-review-card">
                                 <div class="liked-review-card__header">
-                                    <div class="liked-review-card__poem">
-                                        <a href="poem.php?id=<?= (int)$rev['poem_id'] ?>"><?= htmlspecialchars($rev['poem_title']) ?></a>
-                                    </div>
+                                    <div class="liked-review-card__poem"><a href="poem.php?id=<?= $rev['poem_id'] ?>"><?= htmlspecialchars($rev['poem_title']) ?></a></div>
                                     <div class="liked-review-card__score"><?= (int)$rev['total_score'] ?></div>
                                 </div>
                                 <div class="liked-review-card__author"><?= htmlspecialchars($rev['poem_author']) ?> · <?= htmlspecialchars($rev['reviewer_name']) ?></div>

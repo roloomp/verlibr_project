@@ -13,7 +13,7 @@ if ($id <= 0) {
 
 // Загружаем стихотворение
 $stmt = $conn->prepare("
-    SELECT p.id, p.title, p.content, p.year, p.author,
+    SELECT p.id, p.title, p.content, p.year, p.author, p.author_id,
            p.tag_type, p.tag_genre, p.tag_mood, p.tag_versification,
            p.tag_foot, p.tag_stanza, p.tag_rhyme
     FROM poems p
@@ -86,8 +86,7 @@ if (!empty($_SESSION['logged_in'])) {
     $user_rating = $stmt->get_result()->fetch_assoc();
 }
 
-// БАГ ИСПРАВЛЕН: $sort брался из GET и напрямую вставлялся в ORDER BY — SQL-инъекция!
-// Теперь используем whitelist допустимых значений.
+// Whitelist допустимых значений сортировки
 $sort = $_GET['sort'] ?? 'новые';
 $allowed_sort = ['новые', 'лучшие'];
 if (!in_array($sort, $allowed_sort, true)) $sort = 'новые';
@@ -111,18 +110,23 @@ $stmt->execute();
 $reviews = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 // Лайки рецензий
-$review_likes_map = [];
+$review_likes_map  = [];
 $user_review_likes = [];
 if (!empty($reviews)) {
-    $review_ids = array_column($reviews, 'id');
-    $in = implode(',', array_map('intval', $review_ids));
+    // $review_ids — массив id из наших же запросов к БД, приводим к int для IN-списка
+    $review_ids = array_map('intval', array_column($reviews, 'id'));
+    $in         = implode(',', $review_ids); // только цифры — безопасно
+
     $res = $conn->query("SELECT review_id, COUNT(*) AS cnt FROM review_likes WHERE review_id IN ({$in}) GROUP BY review_id");
     if ($res) while ($row = $res->fetch_assoc()) $review_likes_map[(int)$row['review_id']] = (int)$row['cnt'];
 
     if (!empty($_SESSION['logged_in'])) {
         $uid3 = (int)$_SESSION['user_id'];
-        $res = $conn->query("SELECT review_id FROM review_likes WHERE user_id = {$uid3} AND review_id IN ({$in})");
-        if ($res) while ($row = $res->fetch_assoc()) $user_review_likes[(int)$row['review_id']] = true;
+        $stmt = $conn->prepare("SELECT review_id FROM review_likes WHERE user_id = ? AND review_id IN ({$in})");
+        $stmt->bind_param("i", $uid3);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) $user_review_likes[(int)$row['review_id']] = true;
     }
 }
 
@@ -156,8 +160,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
 
     if ($has_review && mb_strlen($rev_text, 'UTF-8') < 300) {
         $review_error = 'Текст рецензии должен быть не менее 300 символов.';
-    // БАГ ИСПРАВЛЕН: не проверялся максимум длины текста на сервере (только maxlength в HTML,
-    // который легко обходится). Добавляем проверку.
     } elseif ($has_review && mb_strlen($rev_text, 'UTF-8') > 8500) {
         $review_error = 'Текст рецензии слишком длинный (максимум 8500 символов).';
     } else {
@@ -209,11 +211,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
 
             <h1 class="poem-title"><?= htmlspecialchars($poem['title']) ?></h1>
             <div class="poem-meta">
-                <?php
-                // БАГ ИСПРАВЛЕН: ссылка вела на author.php без параметра id — страница
-                // всегда открывала одного и того же (или никого). Нужен author_id.
-                // Если author_id NULL — просто текст без ссылки.
-                ?>
                 <?php if ($poem['author_id'] ?? null): ?>
                     <a href="author.php?id=<?= (int)$poem['author_id'] ?>" class="poem-author"><?= htmlspecialchars($poem['author']) ?></a>
                 <?php else: ?>
@@ -511,6 +508,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
         });
     });
 
+    // Получаем CSRF токен один раз для запросов избранного
+    let csrfToken = '';
+    fetch('public/api/get_csrf.php')
+        .then(r => r.json())
+        .then(data => { csrfToken = data.token || ''; })
+        .catch(() => {});
+
     document.getElementById('btn-like')?.addEventListener('click', async function() {
         if (this.dataset.loggedIn !== '1') { requireLogin(); return; }
         const poemId = this.dataset.poemId;
@@ -531,7 +535,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
         try {
             const fd = new FormData();
             fd.append('poem_id', poemId);
-            const res = await fetch('public/api/toggle_favorite.php', { method: 'POST', body: fd });
+            const res = await fetch('public/api/toggle_favorite.php', {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': csrfToken },
+                body: fd
+            });
             const data = await res.json();
             if (data.error) { console.error('fav error', data.error); return; }
             const faved = data.action === 'added';
