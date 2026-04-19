@@ -1,75 +1,98 @@
 async function fetchJson(url) {
-    var response = await fetch(url);
-    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
 }
 
 function renderEmpty(container, text) {
-    container.innerHTML = '<p class="empty-msg">' + text + '</p>';
+    // БАГ ИСПРАВЛЕН: textContent вместо innerHTML — text не должен интерпретироваться как HTML
+    const p = document.createElement('p');
+    p.className = 'empty-msg';
+    p.textContent = text;
+    container.innerHTML = '';
+    container.appendChild(p);
 }
+
+// БАГ ИСПРАВЛЕН: функция безопасного экранирования для подстановки в innerHTML.
+// В оригинале данные из API (title, author, year) вставлялись напрямую через
+// setAttribute — для атрибутов это безопасно, но вот сама innerHTML в
+// connectedCallback уже использовала эти атрибуты без экранирования.
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 
 class PoemItem extends HTMLElement {
     connectedCallback() {
-        var id     = this.getAttribute('poem-id') || '#';
-        var title  = this.getAttribute('title')   || '';
-        var author = this.getAttribute('author')  || '';
-        var year   = this.getAttribute('year')    || '';
-        this.innerHTML =
-            '<div class="ms-item">' +
-                '<div>' +
-                    '<div class="item-title"><a href="poem.php?id=' + id + '">' + title + '</a></div>' +
-                    '<div class="item-author">' + author + '</div>' +
-                '</div>' +
-                '<div class="item-year">' + year + '</div>' +
-            '</div>';
+        const id     = this.getAttribute('poem-id') ?? '#';
+        const title  = this.getAttribute('title')   ?? '';
+        const author = this.getAttribute('author')  ?? '';
+        const year   = this.getAttribute('year')    ?? '';
+        // БАГ ИСПРАВЛЕН: escapeHtml() на всех данных из API перед вставкой в innerHTML
+        this.innerHTML = `
+        <div class="ms-item">
+            <div>
+                <div class="item-title"><a href="poem.php?id=${escapeHtml(id)}">${escapeHtml(title)}</a></div>
+                <div class="item-author">${escapeHtml(author)}</div>
+            </div>
+            <div class="item-year">${escapeHtml(year)}</div>
+        </div>
+        `;
     }
 }
 customElements.define('poem-item', PoemItem);
 
+
 class AuthorItem extends HTMLElement {
     connectedCallback() {
-        var name   = this.getAttribute('name')      || 'Автор';
-        var dates  = this.getAttribute('dates')     || '';
-        var avatar = this.getAttribute('avatar')    || '';
-        var id     = this.getAttribute('author-id') || '#';
+        const name   = this.getAttribute('name')   ?? 'Автор';
+        const dates  = this.getAttribute('dates')  ?? '';
+        const avatar = this.getAttribute('avatar') ?? '';
+        const id     = this.getAttribute('author-id') ?? '#';
 
-        var avatarHtml = avatar
-            ? '<img class="author-avatar" src="' + avatar + '" alt="' + name + '">'
-            : '<div class="author-avatar author-avatar--placeholder"></div>';
+        // БАГ ИСПРАВЛЕН: avatar URL вставлялся без экранирования — можно было
+        // подсунуть что угодно через API, например: " onerror="alert(1)"
+        const avatarHtml = avatar
+            ? `<img class="author-avatar" src="${escapeHtml(avatar)}" alt="${escapeHtml(name)}">`
+            : `<div class="author-avatar author-avatar--placeholder"></div>`;
 
-        this.innerHTML =
-            '<div class="ms-author-item">' +
-                '<div class="author-left">' +
-                    avatarHtml +
-                    '<div>' +
-                        '<div class="author-name"><a href="author.php?id=' + id + '">' + name + '</a></div>' +
-                        (dates ? '<div class="author-dates">' + dates + '</div>' : '') +
-                    '</div>' +
-                '</div>' +
-            '</div>';
+        this.innerHTML = `
+        <div class="ms-author-item">
+            <div class="author-left">
+                ${avatarHtml}
+                <div>
+                    <div class="author-name"><a href="author.php?id=${escapeHtml(id)}">${escapeHtml(name)}</a></div>
+                    ${dates ? `<div class="author-dates">${escapeHtml(dates)}</div>` : ''}
+                </div>
+            </div>
+        </div>
+        `;
     }
 }
 customElements.define('author-item', AuthorItem);
 
+
 async function loadPoems(containerId, type) {
-    var container = document.getElementById(containerId);
+    const container = document.getElementById(containerId);
     if (!container) return;
 
     try {
-        var poems = await fetchJson('public/api/get_poems.php?type=' + type);
+        const poems = await fetchJson(`public/api/get_poems.php?type=${encodeURIComponent(type)}`);
         container.innerHTML = '';
 
-        if (poems.length === 0) {
+        if (!Array.isArray(poems) || poems.length === 0) {
             renderEmpty(container, 'Пусто');
             return;
         }
 
-        poems.forEach(function(poem, index) {
-            var item = document.createElement('poem-item');
-            item.setAttribute('poem-id', poem.id   || '');
-            item.setAttribute('title',   poem.title  || '');
-            item.setAttribute('author',  poem.author || '');
-            item.setAttribute('year',    poem.year   || '');
+        poems.forEach((poem, index) => {
+            const item = document.createElement('poem-item');
+            item.setAttribute('poem-id', poem.id   ?? '');
+            item.setAttribute('title',   poem.title  ?? '');
+            item.setAttribute('author',  poem.author ?? '');
+            item.setAttribute('year',    poem.year   ?? '');
             container.appendChild(item);
             if (index < poems.length - 1) {
                 container.appendChild(document.createElement('hr'));
@@ -81,30 +104,38 @@ async function loadPoems(containerId, type) {
 }
 
 async function loadAuthors() {
-    var container = document.querySelector('.authors-list');
+    const container = document.querySelector('.authors-list');
     if (!container) return;
 
     try {
-        var authors = await fetchJson('public/api/get_authors.php');
-        container.innerHTML = '';
+        const authors = await fetchJson('public/api/get_authors.php');
 
-        authors.forEach(function(author, index) {
-            var item = document.createElement('author-item');
-            item.setAttribute('author-id', author.id);
-            item.setAttribute('name',   author.name);
-            item.setAttribute('dates',  author.dates  || '');
-            item.setAttribute('avatar', author.avatar || '');
+        // БАГ ИСПРАВЛЕН: не проверялось, что ответ — массив. Если API вернёт
+        // объект с ошибкой, forEach упадёт с TypeError.
+        if (!Array.isArray(authors) || authors.length === 0) {
+            renderEmpty(container, 'Нет данных');
+            return;
+        }
+
+        container.innerHTML = '';
+        authors.forEach((author, index) => {
+            const item = document.createElement('author-item');
+            item.setAttribute('author-id', author.id    ?? '');
+            item.setAttribute('name',      author.name  ?? '');
+            item.setAttribute('dates',     author.dates ?? '');
+            item.setAttribute('avatar',    author.avatar ?? '');
             container.appendChild(item);
             if (index < authors.length - 1) {
                 container.appendChild(document.createElement('hr'));
             }
         });
-    } catch (err) {
+    } catch {
         renderEmpty(container, 'Ошибка загрузки');
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+
+document.addEventListener('DOMContentLoaded', () => {
     loadPoems('poems-day',    'daily');
     loadPoems('poems-editor', 'editors');
     loadAuthors();
