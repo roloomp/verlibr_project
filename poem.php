@@ -11,7 +11,6 @@ if ($id <= 0) {
     die('Стихотворение не найдено');
 }
 
-// Загружаем стихотворение
 $stmt = $conn->prepare("
     SELECT p.id, p.title, p.content, p.year, p.author, p.author_id,
            p.tag_type, p.tag_genre, p.tag_mood, p.tag_versification,
@@ -28,7 +27,6 @@ if (!$poem) {
     die('Стихотворение не найдено');
 }
 
-// Рейтинг
 $stmt = $conn->prepare("
     SELECT
         ROUND(AVG(CASE WHEN has_review = 1 THEN total_score END), 0)   AS avg_with_review,
@@ -45,7 +43,6 @@ $avg_with    = $rating['avg_with_review']    ?? 0;
 $avg_without = $rating['avg_without_review'] ?? 0;
 $total_count = $rating['total_count']        ?? 0;
 
-// Похожие
 $stmt = $conn->prepare("
     SELECT id, title, author, year FROM poems
     WHERE id != ? ORDER BY RAND() LIMIT 3
@@ -54,13 +51,11 @@ $stmt->bind_param("i", $id);
 $stmt->execute();
 $similar = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-// Количество лайков
 $stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM likes WHERE poem_id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $like_count = (int)$stmt->get_result()->fetch_assoc()['cnt'];
 
-// Состояние лайка и избранного для текущего пользователя
 $user_liked = false;
 $user_favorited = false;
 if (!empty($_SESSION['logged_in'])) {
@@ -76,7 +71,6 @@ if (!empty($_SESSION['logged_in'])) {
     $user_favorited = $stmt->get_result()->num_rows > 0;
 }
 
-// Существующая оценка/рецензия текущего пользователя
 $user_rating = null;
 if (!empty($_SESSION['logged_in'])) {
     $uid2 = (int)$_SESSION['user_id'];
@@ -86,13 +80,11 @@ if (!empty($_SESSION['logged_in'])) {
     $user_rating = $stmt->get_result()->fetch_assoc();
 }
 
-// Whitelist допустимых значений сортировки
 $sort = $_GET['sort'] ?? 'новые';
 $allowed_sort = ['новые', 'лучшие'];
 if (!in_array($sort, $allowed_sort, true)) $sort = 'новые';
 $order = $sort === 'лучшие' ? 'total_score DESC' : 'created_at DESC';
 
-// Рецензии
 $stmt = $conn->prepare("
     SELECT r.id, r.total_score, r.review_title, r.review_text,
            r.created_at, r.has_review,
@@ -109,13 +101,11 @@ $stmt->bind_param("i", $id);
 $stmt->execute();
 $reviews = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-// Лайки рецензий
 $review_likes_map  = [];
 $user_review_likes = [];
 if (!empty($reviews)) {
-    // $review_ids — массив id из наших же запросов к БД, приводим к int для IN-списка
     $review_ids = array_map('intval', array_column($reviews, 'id'));
-    $in         = implode(',', $review_ids); // только цифры — безопасно
+    $in = implode(',', $review_ids);
 
     $res = $conn->query("SELECT review_id, COUNT(*) AS cnt FROM review_likes WHERE review_id IN ({$in}) GROUP BY review_id");
     if ($res) while ($row = $res->fetch_assoc()) $review_likes_map[(int)$row['review_id']] = (int)$row['cnt'];
@@ -133,7 +123,6 @@ if (!empty($reviews)) {
 $logged_in = !empty($_SESSION['logged_in']);
 $user_name = htmlspecialchars($_SESSION['user_name'] ?? '');
 
-// Обработка удаления своей оценки
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in && isset($_POST['delete_rating'])) {
     $uid_del = (int)$_SESSION['user_id'];
     $stmt = $conn->prepare("DELETE FROM ratings WHERE poem_id = ? AND user_id = ?");
@@ -143,20 +132,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in && isset($_POST['delete_
     exit;
 }
 
-// Обработка отправки оценки
 $review_error = '';
 $review_ok = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
-    $user_id     = (int)$_SESSION['user_id'];
-    $has_review  = isset($_POST['review_text']) && trim($_POST['review_text']) !== '';
-    $sc_rhyme    = min(18, max(0, (int)($_POST["score_rhyme"]         ?? 0)));
-    $sc_style    = min(18, max(0, (int)($_POST['score_style']         ?? 0)));
-    $sc_struct   = min(18, max(0, (int)($_POST['score_structure']     ?? 0)));
-    $sc_indiv    = min(18, max(0, (int)($_POST['score_individuality'] ?? 0)));
-    $sc_atmo     = min(18, max(0, (int)($_POST['score_atmosphere']    ?? 0)));
-    $total       = $sc_rhyme + $sc_style + $sc_struct + $sc_indiv + $sc_atmo;
-    $rev_title   = mb_substr(trim($_POST['review_title'] ?? ''), 0, 255, 'UTF-8');
-    $rev_text    = trim($_POST['review_text']  ?? '');
+    $user_id = (int)$_SESSION['user_id'];
+    $has_review = isset($_POST['review_text']) && trim($_POST['review_text']) !== '';
+    $sc_rhyme = min(18, max(0, (int)($_POST["score_rhyme"]         ?? 0)));
+    $sc_style = min(18, max(0, (int)($_POST['score_style']         ?? 0)));
+    $sc_struct = min(18, max(0, (int)($_POST['score_structure']     ?? 0)));
+    $sc_indiv = min(18, max(0, (int)($_POST['score_individuality'] ?? 0)));
+    $sc_atmo = min(18, max(0, (int)($_POST['score_atmosphere']    ?? 0)));
+    $total = $sc_rhyme + $sc_style + $sc_struct + $sc_indiv + $sc_atmo;
+    $rev_title = mb_substr(trim($_POST['review_title'] ?? ''), 0, 255, 'UTF-8');
+    $rev_text = trim($_POST['review_text']  ?? '');
 
     if ($has_review && mb_strlen($rev_text, 'UTF-8') < 300) {
         $review_error = 'Текст рецензии должен быть не менее 300 символов.';
@@ -406,12 +394,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                 <div class="sidebar-block__title">МЕТКИ</div>
                 <?php
                 $tags = [
-                    'Тип'             => $poem['tag_type'],
-                    'Жанр'            => $poem['tag_genre'],
-                    'Настроение'      => $poem['tag_mood'],
-                    'Стихосложение'   => $poem['tag_versification'],
-                    'Базовая стопа'   => $poem['tag_foot'],
-                    'Строфа'          => $poem['tag_stanza'],
+                    'Тип' => $poem['tag_type'],
+                    'Жанр' => $poem['tag_genre'],
+                    'Настроение' => $poem['tag_mood'],
+                    'Стихосложение' => $poem['tag_versification'],
+                    'Базовая стопа' => $poem['tag_foot'],
+                    'Строфа' => $poem['tag_stanza'],
                     'Способ рифмовки' => $poem['tag_rhyme'],
                 ];
                 foreach ($tags as $label => $value):
@@ -508,7 +496,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
         });
     });
 
-    // Получаем CSRF токен один раз для запросов избранного
     let csrfToken = '';
     fetch('public/api/get_csrf.php')
         .then(r => r.json())

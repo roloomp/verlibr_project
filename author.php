@@ -4,7 +4,7 @@ require_once __DIR__ . '/config/db.php';
 
 $conn = db_connect();
 
-$author_id   = (int)($_GET['id'] ?? 0);
+$author_id = (int)($_GET['id'] ?? 0);
 $author_name = trim($_GET['name'] ?? '');
 
 $author = null;
@@ -22,18 +22,18 @@ if ($author_id > 0) {
 }
 
 $author_display_name = '';
-$author_avatar       = '';
-$author_bio          = '';
-$author_dates        = '';
+$author_avatar = '';
+$author_bio = '';
+$author_dates = '';
 
 if ($author) {
     $author_display_name = $author['name'];
-    $author_avatar       = $author['avatar'] ?? '';
-    $author_bio          = $author['bio'] ?? '';
+    $author_avatar = $author['avatar'] ?? '';
+    $author_bio = $author['bio'] ?? '';
     $birth = $author['birth_year'] ?? '';
     $death = ($author['death_year'] ?? 0) ? $author['death_year'] : 'н.д.';
     $author_dates = $birth ? "$birth — $death" : '';
-    $author_id    = (int)$author['id'];
+    $author_id = (int)$author['id'];
 } elseif ($author_name !== '') {
     $author_display_name = $author_name;
 }

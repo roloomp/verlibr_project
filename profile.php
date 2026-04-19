@@ -3,7 +3,6 @@ session_start();
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/config/auth.php';
 
-// --- обработка входа/регистрации ---
 $auth_error = '';
 $action = $_POST['action'] ?? '';
 
@@ -35,7 +34,6 @@ if ($action === 'login') {
 
 $logged_in = !empty($_SESSION['logged_in']);
 
-// Обработка выхода
 if ($logged_in && isset($_POST['logout'])) {
     session_destroy();
     header('Location: /');
@@ -51,7 +49,6 @@ if ($logged_in) {
     $conn    = db_connect();
     $user_id = (int)$_SESSION['user_id'];
 
-    // --- Загрузка аватара ---
     if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
         $ext      = strtolower(pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION));
         $allowed  = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
@@ -68,7 +65,6 @@ if ($logged_in) {
         }
     }
 
-    // --- Загрузка баннера ---
     if (isset($_FILES['banner']) && $_FILES['banner']['error'] === UPLOAD_ERR_OK) {
         $ext      = strtolower(pathinfo($_FILES['banner']['name'], PATHINFO_EXTENSION));
         $allowed  = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
@@ -85,7 +81,6 @@ if ($logged_in) {
         }
     }
 
-    // --- Сохранение биографии ---
     if (isset($_POST['save_bio'])) {
         $bio = mb_substr(trim($_POST['bio'] ?? ''), 0, 300, 'UTF-8');
         $stmt = $conn->prepare("UPDATE profile SET bio = ? WHERE id = ?");
@@ -93,13 +88,11 @@ if ($logged_in) {
         $stmt->execute();
     }
 
-    // --- Данные пользователя ---
     $stmt = $conn->prepare("SELECT id, name, email, avatar, banner, bio, created_at FROM profile WHERE id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
 
-    // --- Статистика ---
     $stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM ratings WHERE user_id = ?");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
@@ -120,7 +113,6 @@ if ($logged_in) {
     $stmt->execute();
     $avg_score = $stmt->get_result()->fetch_assoc()['avg'] ?? '—';
 
-    // --- Оценки пользователя ---
     $stmt = $conn->prepare("
         SELECT r.id, r.total_score, r.has_review, r.created_at,
                p.id AS poem_id, p.title, p.author
@@ -137,7 +129,6 @@ if ($logged_in) {
     $reviews_only = array_filter($my_ratings, fn($r) => (int)$r['has_review'] === 1);
     $scores_only  = array_filter($my_ratings, fn($r) => (int)$r['has_review'] === 0);
 
-    // --- Понравившиеся рецензии ---
     $stmt = $conn->prepare("
         SELECT rv.id, rv.total_score, rv.review_title, rv.review_text,
                rv.created_at, u.name AS reviewer_name,

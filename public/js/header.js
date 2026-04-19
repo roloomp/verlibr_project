@@ -99,7 +99,6 @@ class AuthButtons extends HTMLElement {
                 '</div>' +
             '</div>';
 
-        // Грузим CSRF
         fetch(r + 'public/api/get_csrf.php')
             .then(function(res) { return res.json(); })
             .then(function(data) {
@@ -111,7 +110,6 @@ class AuthButtons extends HTMLElement {
             })
             .catch(function() {});
 
-        // Проверяем — есть ли ошибка авторизации от сервера
         fetch(r + 'public/api/get_auth_error.php')
             .then(function(res) { return res.json(); })
             .then(function(data) {
@@ -121,7 +119,6 @@ class AuthButtons extends HTMLElement {
                         el.textContent = data.error;
                         el.style.display = 'block';
                     }
-                    // Открываем модалку автоматически если есть ошибка
                     var tab = data.tab || 'login';
                     window.openAuthModal(tab);
                 }

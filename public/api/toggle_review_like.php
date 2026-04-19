@@ -22,8 +22,6 @@ if ($review_id <= 0) {
 
 $conn = db_connect();
 
-// БАГ ИСПРАВЛЕН: убран CREATE TABLE IF NOT EXISTS — см. toggle_like.php
-
 $stmt = $conn->prepare("SELECT id FROM review_likes WHERE user_id = ? AND review_id = ?");
 $stmt->bind_param("ii", $user_id, $review_id);
 $stmt->execute();

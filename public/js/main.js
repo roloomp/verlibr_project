@@ -5,7 +5,6 @@ async function fetchJson(url) {
 }
 
 function renderEmpty(container, text) {
-    // БАГ ИСПРАВЛЕН: textContent вместо innerHTML — text не должен интерпретироваться как HTML
     const p = document.createElement('p');
     p.className = 'empty-msg';
     p.textContent = text;
@@ -13,10 +12,6 @@ function renderEmpty(container, text) {
     container.appendChild(p);
 }
 
-// БАГ ИСПРАВЛЕН: функция безопасного экранирования для подстановки в innerHTML.
-// В оригинале данные из API (title, author, year) вставлялись напрямую через
-// setAttribute — для атрибутов это безопасно, но вот сама innerHTML в
-// connectedCallback уже использовала эти атрибуты без экранирования.
 function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
@@ -30,7 +25,6 @@ class PoemItem extends HTMLElement {
         const title  = this.getAttribute('title')   ?? '';
         const author = this.getAttribute('author')  ?? '';
         const year   = this.getAttribute('year')    ?? '';
-        // БАГ ИСПРАВЛЕН: escapeHtml() на всех данных из API перед вставкой в innerHTML
         this.innerHTML = `
         <div class="ms-item">
             <div>
@@ -52,8 +46,6 @@ class AuthorItem extends HTMLElement {
         const avatar = this.getAttribute('avatar') ?? '';
         const id     = this.getAttribute('author-id') ?? '#';
 
-        // БАГ ИСПРАВЛЕН: avatar URL вставлялся без экранирования — можно было
-        // подсунуть что угодно через API, например: " onerror="alert(1)"
         const avatarHtml = avatar
             ? `<img class="author-avatar" src="${escapeHtml(avatar)}" alt="${escapeHtml(name)}">`
             : `<div class="author-avatar author-avatar--placeholder"></div>`;
@@ -110,8 +102,6 @@ async function loadAuthors() {
     try {
         const authors = await fetchJson('public/api/get_authors.php');
 
-        // БАГ ИСПРАВЛЕН: не проверялось, что ответ — массив. Если API вернёт
-        // объект с ошибкой, forEach упадёт с TypeError.
         if (!Array.isArray(authors) || authors.length === 0) {
             renderEmpty(container, 'Нет данных');
             return;

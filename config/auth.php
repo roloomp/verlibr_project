@@ -9,8 +9,6 @@ function validate_login_input(string $email, string $password): ?string {
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         return 'Некорректный email.';
     }
-    // БАГ ИСПРАВЛЕН: было mb_strlen < 7, т.е. пароль "1234567" (7 симв.) уже проходил.
-    // Приведено к >= 8 символам — стандартный минимум.
     if (mb_strlen($password, 'UTF-8') < 8) {
         return 'Пароль слишком короткий (минимум 8 символов).';
     }
@@ -29,7 +27,6 @@ function handle_login(mysqli $conn, string $email, string $password): array {
     $result = $stmt->get_result();
 
     if ($result->num_rows !== 1) {
-        // БАГ ИСПРАВЛЕН: не раскрываем, существует ли email — общее сообщение
         return ['ok' => false, 'error' => 'Неверный email или пароль.'];
     }
 
@@ -38,8 +35,6 @@ function handle_login(mysqli $conn, string $email, string $password): array {
         return ['ok' => false, 'error' => 'Неверный email или пароль.'];
     }
 
-    // БАГ ИСПРАВЛЕН: session_regenerate_id() предотвращает session fixation атаку.
-    // Без него злоумышленник может подсунуть жертве заранее известный session ID.
     session_regenerate_id(true);
 
     $_SESSION['user_id']   = $user['id'];
@@ -55,7 +50,6 @@ function handle_register(mysqli $conn, string $email, string $name, string $pass
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         return ['ok' => false, 'error' => 'Некорректный email.'];
     }
-    // БАГ ИСПРАВЛЕН: минимум 8 символов, как в validate_login_input
     if (mb_strlen($password, 'UTF-8') < 8) {
         return ['ok' => false, 'error' => 'Пароль слишком короткий (минимум 8 символов).'];
     }
@@ -63,7 +57,6 @@ function handle_register(mysqli $conn, string $email, string $name, string $pass
         return ['ok' => false, 'error' => 'Пароли не совпадают.'];
     }
 
-    // БАГ ИСПРАВЛЕН: обрезаем имя до разумной длины, иначе можно положить в БД 100+ МБ
     $name = mb_substr(trim($name), 0, 100, 'UTF-8');
     if ($name === '') {
         return ['ok' => false, 'error' => 'Введите имя.'];
@@ -81,7 +74,6 @@ function handle_register(mysqli $conn, string $email, string $name, string $pass
     $stmt->bind_param("sss", $name, $email, $hashed);
     $stmt->execute();
 
-    // БАГ ИСПРАВЛЕН: session_regenerate_id() и здесь
     session_regenerate_id(true);
 
     $_SESSION['user_id']   = $conn->insert_id;

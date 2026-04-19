@@ -6,7 +6,6 @@ header('Content-Type: application/json; charset=utf-8');
 $error = $_SESSION['auth_error'] ?? '';
 $tab   = $_SESSION['auth_tab']   ?? 'login';
 
-// Чистим — показываем один раз
 unset($_SESSION['auth_error'], $_SESSION['auth_tab']);
 
 echo json_encode([
