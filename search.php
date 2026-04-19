@@ -19,7 +19,7 @@ foreach ($tag_keys as $k) {
     $tag_vals[$k] = trim($_GET[$k] ?? '');
 }
 
-$per_page = 12;
+$per_page = 18;
 $offset   = ($page - 1) * $per_page;
 
 $where   = [];
@@ -79,7 +79,7 @@ $count_sql  = "SELECT COUNT(DISTINCT p.id) FROM poems p $where_sql";
 $stmt_cnt   = $conn->prepare($count_sql);
 if (!empty($count_params)) $stmt_cnt->bind_param($count_types, ...$count_params);
 $stmt_cnt->execute();
-$total       = (int)$stmt_cnt->get_result()->fetch_row()[0];
+$total = (int)$stmt_cnt->get_result()->fetch_row()[0];
 $total_pages = max(1, (int)ceil($total / $per_page));
 
 $data_sql = "
@@ -203,13 +203,13 @@ foreach ($tag_keys as $k) {
 
                     <?php
                     $filter_labels = [
-                        'tag_type'          => 'Тип',
-                        'tag_genre'         => 'Жанр',
-                        'tag_mood'          => 'Настроение',
+                        'tag_type' => 'Тип',
+                        'tag_genre' => 'Жанр',
+                        'tag_mood' => 'Настроение',
                         'tag_versification' => 'Стихосложение',
-                        'tag_foot'          => 'Базовая стопа',
-                        'tag_stanza'        => 'Строфа',
-                        'tag_rhyme'         => 'Способ рифмовки',
+                        'tag_foot' => 'Базовая стопа',
+                        'tag_stanza' => 'Строфа',
+                        'tag_rhyme' => 'Способ рифмовки',
                     ];
                     foreach ($filter_labels as $key => $label): ?>
                     <div class="filter-group">
