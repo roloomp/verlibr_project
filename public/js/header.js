@@ -1,10 +1,9 @@
-// Определяем корень сайта по пути к этому скрипту
 var _SITE_ROOT = (function() {
     var scripts = document.getElementsByTagName('script');
     for (var i = 0; i < scripts.length; i++) {
         var src = scripts[i].src;
         var m = src.match(/^(https?:\/\/[^\/]+)(\/.*?)public\/js\/header\.js/);
-        if (m) return m[1] + m[2]; // например: http://example.local/
+        if (m) return m[1] + m[2];
     }
     return '/';
 })();
@@ -62,6 +61,8 @@ class AuthButtons extends HTMLElement {
                 '<div class="modal" role="dialog" aria-modal="true">' +
                     '<button class="modal__close" id="btn-close" aria-label="Закрыть">✕</button>' +
 
+                    '<div id="auth-error-msg" style="display:none;color:red;font-size:13px;margin-bottom:10px;text-align:center;"></div>' +
+
                     '<form class="form-panel" id="panel-login" method="POST" action="' + r + 'auth.php">' +
                         '<input type="hidden" name="action" value="login">' +
                         '<input type="hidden" name="csrf_token" id="csrf-login" value="">' +
@@ -98,7 +99,7 @@ class AuthButtons extends HTMLElement {
                 '</div>' +
             '</div>';
 
-        // Загружаем CSRF токен по абсолютному пути
+        // Грузим CSRF
         fetch(r + 'public/api/get_csrf.php')
             .then(function(res) { return res.json(); })
             .then(function(data) {
@@ -107,6 +108,23 @@ class AuthButtons extends HTMLElement {
                 var el2 = document.getElementById('csrf-register');
                 if (el1) el1.value = t;
                 if (el2) el2.value = t;
+            })
+            .catch(function() {});
+
+        // Проверяем — есть ли ошибка авторизации от сервера
+        fetch(r + 'public/api/get_auth_error.php')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    var el = document.getElementById('auth-error-msg');
+                    if (el) {
+                        el.textContent = data.error;
+                        el.style.display = 'block';
+                    }
+                    // Открываем модалку автоматически если есть ошибка
+                    var tab = data.tab || 'login';
+                    window.openAuthModal(tab);
+                }
             })
             .catch(function() {});
 
@@ -121,7 +139,8 @@ class AuthButtons extends HTMLElement {
 
         function openModal(tab) {
             panels.forEach(function(p) { p.classList.remove('active'); });
-            self.querySelector('#panel-' + tab).classList.add('active');
+            var target = self.querySelector('#panel-' + tab);
+            if (target) target.classList.add('active');
             overlay.classList.add('open');
         }
 

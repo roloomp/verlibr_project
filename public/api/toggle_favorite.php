@@ -10,7 +10,9 @@ if (empty($_SESSION['logged_in'])) {
     exit;
 }
 
-if (empty($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+// CSRF — принимаем токен либо из POST, либо из заголовка X-CSRF-Token (удобно для fetch)
+$token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (!$token || $token !== ($_SESSION['csrf_token'] ?? '')) {
     http_response_code(403);
     echo json_encode(['error' => 'Ошибка безопасности']);
     exit;
