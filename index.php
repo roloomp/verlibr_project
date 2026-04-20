@@ -36,8 +36,8 @@ $logged_in = !empty($_SESSION['logged_in']);
 
         <section class="tags">
             <button class="tag" onclick="window.location='search.php?q=Александр+Пушкин'">Александр Пушкин</button>
-            <button class="tag" onclick="window.location='search.php?q=Весна'">Весна</button>
-            <button class="tag" onclick="window.location='search.php?q=И+грянул+бой'">И грянул бой, Полтавской бой!</button>
+            <button class="tag" onclick="window.location='search.php?q=Канал+Грибоедова'">Канал Грибоедова</button>
+            <button class="tag" onclick="window.location='search.php?q=Ночь'">Ночь</button>
         </section>
 
         <hr class="divider">
