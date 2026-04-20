@@ -10,15 +10,6 @@ var _SITE_ROOT = (function() {
 
 class MyHeader extends HTMLElement {
     connectedCallback() {
-        var path = window.location.pathname;
-        var page = path.split('/').pop() || 'index.php';
-
-        function isActive(names) {
-            return names.some(function(n) {
-                return page === n || path.endsWith('/' + n);
-            }) ? 'header__icon--active' : '';
-        }
-
         var r = _SITE_ROOT;
 
         this.innerHTML =
@@ -28,22 +19,23 @@ class MyHeader extends HTMLElement {
                     '<span class="header__title">Verlibr</span>' +
                 '</a>' +
                 '<nav class="header__nav">' +
-                    '<a href="' + r + 'popular.php" class="header__icon ' + isActive(['popular.php']) + '" title="Популярное">' +
+                    '<a href="' + r + 'popular.php" class="header__icon" title="Популярное">' +
                         '<img src="' + r + 'public/assets/icons/Icon_fire.png" alt="Популярное">' +
                     '</a>' +
-                    '<a href="' + r + 'search.php" class="header__icon ' + isActive(['search.php']) + '" title="Поиск">' +
+                    '<a href="' + r + 'search.php" class="header__icon" title="Поиск">' +
                         '<img src="' + r + 'public/assets/icons/Icon_search.png" alt="Поиск">' +
                     '</a>' +
-                    '<a href="' + r + 'profile.php" class="header__icon ' + isActive(['profile.php']) + '" title="Профиль">' +
+                    '<a href="' + r + 'profile.php" class="header__icon" title="Профиль">' +
                         '<img src="' + r + 'public/assets/icons/Icon_profile.png" alt="Профиль">' +
                     '</a>' +
-                    '<a href="' + r + 'favorites.php" class="header__icon ' + isActive(['favorites.php']) + '" title="Избранное">' +
+                    '<a href="' + r + 'favorites.php" class="header__icon" title="Избранное">' +
                         '<img src="' + r + 'public/assets/icons/Icon_favorite.png" alt="Избранное">' +
                     '</a>' +
                 '</nav>' +
             '</header>';
     }
 }
+
 customElements.define('my-header', MyHeader);
 
 

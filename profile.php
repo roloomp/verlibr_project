@@ -215,7 +215,6 @@ $active_subtab = $_GET['subtab'] ?? 'reviews';
 
         <main>
             <div class="profile-guest">
-                <div class="profile-guest__icon">👤</div>
                 <h1 class="profile-guest__title">Вы не авторизованы</h1>
                 <p class="profile-guest__sub">Войдите или зарегистрируйтесь, чтобы увидеть свой профиль</p>
                 <div class="profile-guest__btns">

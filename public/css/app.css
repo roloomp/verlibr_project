@@ -69,12 +69,6 @@ button {
     height: 100%; 
     object-fit: cover; 
 }
-.header__icon--active {
-    opacity: 1;
-    filter: brightness(0) invert(1);
-    background: rgba(255,255,255,0.2);
-    border-radius: 8px;
-}
 
 .auth-topbar {
     display: flex; 
