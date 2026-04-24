@@ -50,12 +50,17 @@ if ($logged_in) {
     $user_id = (int)$_SESSION['user_id'];
 
     if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-        $ext      = strtolower(pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION));
-        $allowed  = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-        if (in_array($ext, $allowed, true)) {
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime  = $finfo->file($_FILES['avatar']['tmp_name']);
+        $allowed_mime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        $max_size = 5 * 1024 * 1024;
+
+        if (in_array($mime, $allowed_mime, true) && $_FILES['avatar']['size'] <= $max_size) {
+            $ext_map = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+            $ext  = $ext_map[$mime];
             $dir  = __DIR__ . '/public/uploads/avatars/';
             if (!is_dir($dir)) mkdir($dir, 0755, true);
-            $fname = 'avatar_' . $user_id . '_' . time() . '.' . $ext;
+            $fname = 'avatar_' . $user_id . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
             if (move_uploaded_file($_FILES['avatar']['tmp_name'], $dir . $fname)) {
                 $path = 'public/uploads/avatars/' . $fname;
                 $stmt = $conn->prepare("UPDATE profile SET avatar = ? WHERE id = ?");
@@ -66,12 +71,17 @@ if ($logged_in) {
     }
 
     if (isset($_FILES['banner']) && $_FILES['banner']['error'] === UPLOAD_ERR_OK) {
-        $ext      = strtolower(pathinfo($_FILES['banner']['name'], PATHINFO_EXTENSION));
-        $allowed  = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-        if (in_array($ext, $allowed, true)) {
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime  = $finfo->file($_FILES['banner']['tmp_name']);
+        $allowed_mime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        $max_size = 10 * 1024 * 1024;
+
+        if (in_array($mime, $allowed_mime, true) && $_FILES['banner']['size'] <= $max_size) {
+            $ext_map = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+            $ext  = $ext_map[$mime];
             $dir  = __DIR__ . '/public/uploads/banners/';
             if (!is_dir($dir)) mkdir($dir, 0755, true);
-            $fname = 'banner_' . $user_id . '_' . time() . '.' . $ext;
+            $fname = 'banner_' . $user_id . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
             if (move_uploaded_file($_FILES['banner']['tmp_name'], $dir . $fname)) {
                 $path = 'public/uploads/banners/' . $fname;
                 $stmt = $conn->prepare("UPDATE profile SET banner = ? WHERE id = ?");
