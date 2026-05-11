@@ -11,6 +11,13 @@ if (empty($_SESSION['logged_in'])) {
     exit;
 }
 
+$token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (!$token || $token !== ($_SESSION['csrf_token'] ?? '')) {
+    http_response_code(403);
+    echo json_encode(['error' => 'Ошибка безопасности'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 $poem_id = (int)($_POST['poem_id'] ?? 0);
 $user_id = (int)$_SESSION['user_id'];
 

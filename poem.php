@@ -2,6 +2,7 @@
 session_start();
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/config/auth.php';
+require_once __DIR__ . '/config/csrf.php';
 
 $conn = db_connect();
 
@@ -124,6 +125,10 @@ $logged_in = !empty($_SESSION['logged_in']);
 $user_name = htmlspecialchars($_SESSION['user_name'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in && isset($_POST['delete_rating'])) {
+    if (empty($_POST['csrf_token']) || $_POST['csrf_token'] !== ($_SESSION['csrf_token'] ?? '')) {
+        http_response_code(403);
+        die('Ошибка безопасности.');
+    }
     $uid_del = (int)$_SESSION['user_id'];
     $stmt = $conn->prepare("DELETE FROM ratings WHERE poem_id = ? AND user_id = ?");
     $stmt->bind_param("ii", $id, $uid_del);
@@ -251,6 +256,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
                         <span class="rate-existing__label">Ваша оценка</span>
                         <form method="POST" style="display:inline" onsubmit="return confirm('Удалить вашу оценку?')">
                             <input type="hidden" name="delete_rating" value="1">
+                            <?= csrf_field() ?>
                             <button type="submit" class="rate-delete-btn" title="Удалить оценку">🗑 Удалить</button>
                         </form>
                     </div>
@@ -508,7 +514,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
         try {
             const fd = new FormData();
             fd.append('poem_id', poemId);
-            const res = await fetch('public/api/toggle_like.php', { method: 'POST', body: fd });
+            const res = await fetch('public/api/toggle_like.php', {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': csrfToken },
+                body: fd
+            });
             const data = await res.json();
             const liked = data.action === 'added';
             this.innerHTML = (liked ? '♥' : '♡') + ' <span id="like-count">' + data.count + '</span>';
@@ -542,7 +552,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $logged_in) {
             try {
                 const fd = new FormData();
                 fd.append('review_id', reviewId);
-                const res = await fetch('public/api/toggle_review_like.php', { method: 'POST', body: fd });
+                const res = await fetch('public/api/toggle_review_like.php', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-Token': csrfToken },
+                    body: fd
+                });
                 const data = await res.json();
                 const liked = data.action === 'added';
                 this.innerHTML = (liked ? '♥' : '♡') + ' <span>' + data.count + '</span>';
